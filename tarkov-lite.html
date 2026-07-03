@@ -1,0 +1,3259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>摸金模拟器 ✨</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+:root {
+  --bg-deep: #1a1a2e;
+  --bg-card: rgba(255,255,255,0.06);
+  --bg-card-hover: rgba(255,255,255,0.10);
+  --pink: #ff6b9d;
+  --pink-glow: rgba(255,107,157,0.3);
+  --purple: #c084fc;
+  --blue: #60a5fa;
+  --mint: #34d399;
+  --gold: #fbbf24;
+  --orange: #fb923c;
+  --red: #f87171;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-bright: #f8fafc;
+  --border: rgba(255,255,255,0.1);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #1a1a2e 30%, #16213e 70%, #0f3460);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Starry background */
+.stars {
+  position: fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 25% 65%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 40% 15%, rgba(255,182,193,0.5), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 70% 75%, rgba(200,180,255,0.5), transparent),
+    radial-gradient(1px 1px at 85% 30%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 15% 85%, rgba(255,182,193,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 60% 90%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 92% 55%, rgba(200,180,255,0.4), transparent);
+}
+
+/* Layout */
+.app { position:relative; z-index:1; max-width:800px; margin:0 auto; padding:16px; }
+.screen { display:none; }
+.screen.active { display:block; animation: fadeSlideIn 0.3s ease; }
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  transition: var(--transition);
+}
+.card:hover { background: var(--bg-card-hover); }
+.card-header {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:14px; padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.card-header .icon { font-size:24px; }
+.card-header h2 { font-size:18px; font-weight:700; background:linear-gradient(135deg,var(--pink),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.card-header h3 { font-size:15px; font-weight:600; color:var(--text-bright); }
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 20px; border:none; border-radius:var(--radius-sm);
+  font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  transition:var(--transition); position:relative; overflow:hidden;
+  white-space:nowrap;
+}
+.btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.15));
+  pointer-events:none;
+}
+.btn-primary { background:linear-gradient(135deg,var(--pink),#e04080); color:#fff; box-shadow:0 4px 15px var(--pink-glow); }
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,107,157,0.5); }
+.btn-secondary { background:rgba(255,255,255,0.1); color:var(--text); border:1px solid var(--border); }
+.btn-secondary:hover { background:rgba(255,255,255,0.18); }
+.btn-success { background:linear-gradient(135deg,var(--mint),#10b981); color:#fff; }
+.btn-success:hover { transform:translateY(-2px); }
+.btn-danger { background:linear-gradient(135deg,var(--red),#dc2626); color:#fff; }
+.btn-warning { background:linear-gradient(135deg,var(--orange),#ea580c); color:#fff; }
+.btn-gold { background:linear-gradient(135deg,var(--gold),#d97706); color:#1a1a2e; font-weight:700; }
+.btn-sm { padding:6px 14px; font-size:12px; border-radius:var(--radius-xs); }
+.btn-lg { padding:14px 32px; font-size:16px; border-radius:var(--radius); }
+.btn-block { width:100%; justify-content:center; }
+.btn:active { transform:scale(0.96); }
+.btn:disabled { opacity:0.4; pointer-events:none; }
+
+/* Resource bar */
+.res-bar {
+  display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;
+}
+.res-item {
+  display:flex; align-items:center; gap:6px;
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:8px 14px;
+  font-size:13px; font-weight:600;
+}
+.res-item .icon { font-size:18px; }
+
+/* Grid map */
+.map-container {
+  position:relative;
+  margin:0 auto;
+}
+.map-grid {
+  display:grid; gap:3px;
+}
+.map-cell {
+  aspect-ratio:1;
+  border-radius:4px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; position:relative;
+  transition:var(--transition);
+  border:1px solid transparent;
+}
+.map-cell:hover { transform:scale(1.08); z-index:2; }
+.map-cell.unexplored { background:rgba(255,255,255,0.03); }
+.map-cell.empty { background:rgba(255,255,255,0.06); }
+.map-cell.loot { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.3); }
+.map-cell.enemy { background:rgba(248,113,113,0.15); border-color:rgba(248,113,113,0.3); }
+.map-cell.boss { background:rgba(220,38,38,0.25); border-color:rgba(220,38,38,0.5); animation:bossPulse 1.5s ease-in-out infinite; }
+@keyframes bossPulse {
+  0%,100% { box-shadow:0 0 8px rgba(220,38,38,0.3); }
+  50% { box-shadow:0 0 20px rgba(220,38,38,0.6); }
+}
+.map-cell.extract { background:rgba(52,211,153,0.15); border-color:rgba(52,211,153,0.4); animation:extractGlow 2s ease-in-out infinite; }
+@keyframes extractGlow {
+  0%,100% { box-shadow:0 0 4px rgba(52,211,153,0.3); }
+  50% { box-shadow:0 0 12px rgba(52,211,153,0.6); }
+}
+.map-cell.hazard { background:rgba(251,146,60,0.12); border-color:rgba(251,146,60,0.3); }
+.map-cell.locked { background:rgba(192,132,252,0.12); border-color:rgba(192,132,252,0.4); }
+.map-cell.hvz { box-shadow:0 0 8px rgba(192,132,252,0.4); }
+.map-cell.player { background:var(--blue) !important; border-color:#93c5fd !important; box-shadow:0 0 16px rgba(96,165,250,0.5); animation:playerPulse 1s ease-in-out infinite; }
+@keyframes playerPulse {
+  0%,100% { box-shadow:0 0 12px rgba(96,165,250,0.5); }
+  50% { box-shadow:0 0 24px rgba(96,165,250,0.8); }
+}
+.map-cell.adjacent { border-color:rgba(255,255,255,0.4) !important; }
+.map-cell .cell-icon { font-size:18px; pointer-events:none; }
+.map-legend {
+  display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; font-size:11px; color:var(--text-dim);
+}
+.map-legend span { display:flex; align-items:center; gap:4px; }
+
+/* Inventory grid */
+.inv-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(60px,1fr)); gap:6px;
+}
+.inv-slot {
+  aspect-ratio:1; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:var(--radius-xs); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; cursor:pointer;
+  font-size:11px; text-align:center; padding:4px; transition:var(--transition);
+  position:relative; overflow:hidden;
+}
+.inv-slot:hover { background:rgba(255,255,255,0.1); transform:scale(1.05); }
+.inv-slot .item-icon { font-size:22px; }
+.inv-slot .item-name { font-size:10px; color:var(--text-dim); line-height:1.2; }
+.inv-slot .item-qty { position:absolute; top:2px; right:4px; font-size:9px; font-weight:700; color:var(--gold); }
+.inv-slot.rarity-common { border-color:rgba(255,255,255,0.15); }
+.inv-slot.rarity-uncommon { border-color:rgba(52,211,153,0.3); }
+.inv-slot.rarity-rare { border-color:rgba(96,165,250,0.4); }
+.inv-slot.rarity-epic { border-color:rgba(192,132,252,0.5); background:rgba(192,132,252,0.08); }
+.inv-slot.rarity-legendary { border-color:rgba(251,191,36,0.6); background:rgba(251,191,36,0.1); animation:legendaryGlow 2s ease-in-out infinite; }
+@keyframes legendaryGlow {
+  0%,100% { box-shadow:0 0 4px rgba(251,191,36,0.2); }
+  50% { box-shadow:0 0 12px rgba(251,191,36,0.5); }
+}
+
+/* Trader shop */
+.shop-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px;
+}
+.shop-item {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px; cursor:pointer;
+  transition:var(--transition); text-align:center;
+}
+.shop-item:hover { background:var(--bg-card-hover); transform:translateY(-1px); }
+.shop-item .icon { font-size:28px; }
+.shop-item .name { font-size:13px; font-weight:600; margin:4px 0; }
+.shop-item .stat { font-size:10px; color:var(--text-dim); }
+.shop-item .price { font-size:12px; font-weight:700; color:var(--gold); margin-top:4px; }
+
+/* Combat */
+.combat-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7);
+  display:flex; align-items:center; justify-content:center; z-index:100;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.combat-panel {
+  background:linear-gradient(135deg,#1e1b4b,#1a1a2e);
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px; max-width:480px; width:90%; box-shadow:0 0 60px rgba(255,107,157,0.2);
+}
+.combat-enemy { text-align:center; margin-bottom:16px; }
+.combat-enemy .sprite { font-size:64px; }
+.combat-enemy .name { font-size:18px; font-weight:700; }
+.combat-enemy .hp-bar {
+  height:8px; background:rgba(255,255,255,0.1); border-radius:4px; margin-top:8px; overflow:hidden;
+}
+.combat-enemy .hp-fill {
+  height:100%; background:linear-gradient(90deg,var(--red),var(--orange));
+  border-radius:4px; transition:width 0.3s;
+}
+.combat-player-status {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px;
+}
+.body-part {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-xs); padding:8px 4px; text-align:center; font-size:11px;
+  cursor:pointer; transition:var(--transition);
+}
+.body-part:hover { background:var(--bg-card-hover); border-color:var(--pink); }
+.body-part .part-name { font-weight:600; }
+.body-part .part-hp { color:var(--mint); font-size:10px; }
+.body-part.damaged { border-color:var(--red); }
+.body-part.damaged .part-hp { color:var(--red); }
+.combat-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.combat-log {
+  max-height:120px; overflow-y:auto; font-size:11px; color:var(--text-dim);
+  margin-top:12px; padding:8px; background:rgba(0,0,0,0.3); border-radius:var(--radius-xs);
+}
+.combat-log .log-hit { color:var(--red); }
+.combat-log .log-miss { color:var(--text-dim); }
+.combat-log .log-heal { color:var(--mint); }
+.combat-log .log-kill { color:var(--gold); font-weight:700; }
+
+/* Modals */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.6);
+  display:flex; align-items:center; justify-content:center; z-index:100;
+  animation: fadeIn 0.2s ease;
+}
+.modal {
+  background:linear-gradient(135deg,#1e1b4b,#16213e);
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px; max-width:440px; width:90%; max-height:80vh; overflow-y:auto;
+  box-shadow:0 0 40px rgba(192,132,252,0.15);
+}
+.modal h3 { font-size:17px; margin-bottom:12px; }
+
+/* Tabs */
+.tabs { display:flex; gap:4px; margin-bottom:14px; flex-wrap:wrap; }
+.tab {
+  padding:8px 16px; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  border-radius:var(--radius-xs); cursor:pointer; font-size:13px; font-weight:500;
+  transition:var(--transition);
+}
+.tab:hover { background:rgba(255,255,255,0.1); }
+.tab.active { background:var(--pink); border-color:var(--pink); color:#fff; }
+
+/* Log */
+.log-container {
+  max-height:140px; overflow-y:auto; font-size:11px;
+  padding:8px; background:rgba(0,0,0,0.3); border-radius:var(--radius-sm);
+  color:var(--text-dim); line-height:1.6;
+}
+
+/* Toast */
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:200;
+  padding:10px 24px; border-radius:var(--radius-sm);
+  font-size:13px; font-weight:600; animation:toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+  pointer-events:none;
+}
+.toast-success { background:#065f46; color:var(--mint); border:1px solid var(--mint); }
+.toast-error { background:#7f1d1d; color:var(--red); border:1px solid var(--red); }
+.toast-info { background:#1e3a5f; color:var(--blue); border:1px solid var(--blue); }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+
+/* Title screen */
+.title-screen {
+  text-align:center; padding:60px 20px;
+}
+.title-logo { font-size:64px; margin-bottom:16px; animation:float 3s ease-in-out infinite; }
+@keyframes float {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-10px); }
+}
+.title-name {
+  font-size:36px; font-weight:900;
+  background:linear-gradient(135deg,var(--pink),var(--purple),var(--blue));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin-bottom:8px;
+}
+.title-sub { font-size:14px; color:var(--text-dim); margin-bottom:32px; }
+.title-buttons { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+/* HP display */
+.hp-display { display:flex; align-items:center; gap:8px; }
+.hp-display .hp-bar-outer { flex:1; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+.hp-display .hp-bar-inner { height:100%; border-radius:4px; transition:width 0.3s; }
+.hp-display .hp-text { font-size:12px; font-weight:700; white-space:nowrap; }
+.hp-healthy { background:var(--mint); }
+.hp-warning { background:var(--orange); }
+.hp-danger { background:var(--red); }
+
+/* Highlight */
+.highlight { color:var(--gold); font-weight:700; }
+.text-pink { color:var(--pink); }
+.text-mint { color:var(--mint); }
+.text-blue { color:var(--blue); }
+.text-purple { color:var(--purple); }
+.text-dim { color:var(--text-dim); font-size:12px; }
+
+/* Ad button */
+.ad-btn {
+  position:relative;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b,#d97706);
+  color:#1a1a2e; font-weight:800;
+  border:2px solid #fbbf24;
+  animation:adPulse 2s ease-in-out infinite;
+}
+@keyframes adPulse {
+  0%,100% { box-shadow:0 0 8px rgba(251,191,36,0.4); }
+  50% { box-shadow:0 0 24px rgba(251,191,36,0.8); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.25); }
+
+/* Responsive */
+@media (max-width:600px) {
+  .app { padding:8px; }
+  .card { padding:14px; }
+  .title-name { font-size:24px; }
+  .btn { padding:8px 14px; font-size:12px; }
+  .res-bar { gap:6px; }
+  .res-item { padding:6px 10px; font-size:11px; }
+  .shop-grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); }
+}
+
+/* Manga speech bubble */
+.speech-bubble {
+  position:relative;
+  background:#fff; color:#1a1a2e;
+  padding:8px 14px; border-radius:12px;
+  font-size:12px; font-weight:600;
+  margin-top:8px;
+}
+.speech-bubble::after {
+  content:''; position:absolute; bottom:-6px; left:20px;
+  width:0; height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-top:6px solid #fff;
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="app" id="app"></div>
+<div id="toasts"></div>
+
+<script>
+// ============================================================
+// 摸金模拟器 - Treasure Hunter Simulator
+// ============================================================
+
+// ─── GAME DATA ───────────────────────────────────────────────
+
+const RARITY = {
+  common:   { name:'普通', color:'#94a3b8', emoji:'⚪', mult:1 },
+  uncommon: { name:'精良', color:'#34d399', emoji:'🟢', mult:2 },
+  rare:     { name:'稀有', color:'#60a5fa', emoji:'🔵', mult:4 },
+  epic:     { name:'史诗', color:'#c084fc', emoji:'🟣', mult:8 },
+  legendary:{ name:'传说', color:'#fbbf24', emoji:'🟡', mult:20 },
+};
+
+const BODY_PARTS = ['head','thorax','stomach','lArm','rArm','lLeg','rLeg'];
+const BODY_NAMES = { head:'🧠头部', thorax:'❤️胸部', stomach:'🫁腹部', lArm:'💪左臂', rArm:'💪右臂', lLeg:'🦵左腿', rLeg:'🦵右腿' };
+const BODY_HIT_WEIGHT = { head:8, thorax:30, stomach:22, lArm:12, rArm:12, lLeg:8, rLeg:8 };
+
+// Items database
+const ITEMS = {
+  // Weapons
+  knife:      { name:'🔪小刀', type:'weapon', dmg:18, acc:95, firerate:1, ammo:null, weight:0.5, val:200, rarity:'common', desc:'最基础的近战武器' },
+  pistol:     { name:'🔫手枪', type:'weapon', dmg:35, acc:75, firerate:2, ammo:'9mm', magSize:12, weight:1.2, val:800, rarity:'common', desc:'可靠的副武器' },
+  smg:        { name:'🔫冲锋枪', type:'weapon', dmg:22, acc:55, firerate:5, ammo:'9mm', magSize:30, weight:2.5, val:3000, rarity:'uncommon', desc:'近距离火力压制' },
+  rifle:      { name:'🔫突击步枪', type:'weapon', dmg:48, acc:80, firerate:3, ammo:'556', magSize:30, weight:3.5, val:12000, rarity:'rare', desc:'中距离全能武器' },
+  dmr:        { name:'🔭精准步枪', type:'weapon', dmg:75, acc:90, firerate:2, ammo:'762', magSize:20, weight:4.5, val:25000, rarity:'epic', desc:'远程精准打击' },
+  shotgun:    { name:'💥霰弹枪', type:'weapon', dmg:90, acc:40, firerate:1, ammo:'12g', magSize:8, weight:3, val:6000, rarity:'uncommon', desc:'近距离毁灭性火力' },
+  sniper:     { name:'🎯狙击步枪', type:'weapon', dmg:150, acc:95, firerate:1, ammo:'338', magSize:5, weight:6, val:50000, rarity:'legendary', desc:'一击必杀' },
+
+  // Armor
+  vest_t1: { name:'🦺轻型防弹衣', type:'armor', prot:20, dura:60, zones:['thorax','stomach'], weight:2, val:3000, rarity:'common', desc:'基础防护' },
+  vest_t3: { name:'🦺中型防弹衣', type:'armor', prot:40, dura:80, zones:['thorax','stomach'], weight:3.5, val:12000, rarity:'uncommon', desc:'可靠的中级防护' },
+  vest_t5: { name:'🦺重型防弹衣', type:'armor', prot:65, dura:120, zones:['thorax','stomach','lArm','rArm'], weight:6, val:40000, rarity:'epic', desc:'军用级全身防护' },
+  helmet_l1: { name:'🪖轻盔', type:'armor', prot:15, dura:40, zones:['head'], weight:0.8, val:2000, rarity:'common', desc:'基础头部防护' },
+  helmet_l3: { name:'🪖战术头盔', type:'armor', prot:35, dura:60, zones:['head'], weight:1.5, val:10000, rarity:'uncommon', desc:'带面罩的战术头盔' },
+  helmet_l5: { name:'🪖重型头盔', type:'armor', prot:55, dura:90, zones:['head'], weight:2.5, val:35000, rarity:'epic', desc:'顶级头部防护' },
+
+  // Ammo
+  ammo_9mm:  { name:'📦9mm弹匣', type:'ammo', ammoType:'9mm', qty:30, val:300, rarity:'common', desc:'手枪/冲锋枪弹药' },
+  ammo_556:  { name:'📦5.56弹匣', type:'ammo', ammoType:'556', qty:30, val:900, rarity:'common', desc:'突击步枪弹药' },
+  ammo_762:  { name:'📦7.62弹匣', type:'ammo', ammoType:'762', qty:20, val:1500, rarity:'uncommon', desc:'精准步枪弹药' },
+  ammo_12g:  { name:'📦12号霰弹', type:'ammo', ammoType:'12g', qty:8, val:500, rarity:'common', desc:'霰弹枪弹药' },
+  ammo_338:  { name:'📦.338马格南', type:'ammo', ammoType:'338', qty:5, val:5000, rarity:'epic', desc:'狙击步枪专用弹药' },
+
+  // Medical
+  bandage:    { name:'🩹绷带', type:'medical', heal:25, uses:3, weight:0.2, val:300, rarity:'common', desc:'治疗轻伤' },
+  ai2:        { name:'💊AI-2急救包', type:'medical', heal:50, uses:2, weight:0.4, val:1200, rarity:'uncommon', desc:'标准军用急救包' },
+  salewa:     { name:'🏥Salewa医疗包', type:'medical', heal:100, uses:1, weight:0.8, val:6000, rarity:'rare', desc:'专业战地医疗包' },
+  surgery:    { name:'🔧手术包', type:'medical', heal:80, uses:1, weight:1, val:15000, rarity:'epic', canFixBlacked:true, desc:'可修复断裂的肢体' },
+
+  // Backpacks
+  bp_sling:   { name:'🎒挎包', type:'backpack', slots:4, weight:0.5, val:500, rarity:'common', desc:'基础携带容量' },
+  bp_scav:    { name:'🎒拾荒者背包', type:'backpack', slots:8, weight:1, val:3000, rarity:'uncommon', desc:'拾荒者最爱' },
+  bp_combat:  { name:'🎒战术背包', type:'backpack', slots:14, weight:2, val:12000, rarity:'rare', desc:'军用级携带容量' },
+  bp_assault: { name:'🎒突击背包', type:'backpack', slots:20, weight:3, val:35000, rarity:'epic', desc:'最大容量背包' },
+
+  // Rig (chest rig for more slots)
+  rig_l1: { name:'👕轻型胸挂', type:'rig', slots:2, weight:0.5, val:800, rarity:'common', desc:'额外口袋' },
+  rig_l2: { name:'👕战术胸挂', type:'rig', slots:4, weight:1, val:4000, rarity:'uncommon', desc:'多口袋战术胸挂' },
+  rig_l3: { name:'👕突击胸挂', type:'rig', slots:6, weight:1.5, val:15000, rarity:'rare', desc:'最高容量胸挂' },
+
+  // Loot / Valuables
+  gold_ring:   { name:'💍金戒指', type:'loot', val:600, rarity:'common', desc:'普通的金戒指' },
+  gold_chain:  { name:'📿金链子', type:'loot', val:1200, rarity:'common', desc:'沉甸甸的金链' },
+  wristwatch:  { name:'⌚名牌手表', type:'loot', val:2500, rarity:'uncommon', desc:'瑞士名牌手表' },
+  diamond:     { name:'💎钻石', type:'loot', val:8000, rarity:'rare', desc:'未经切割的天然钻石' },
+  gpu:         { name:'🖥️显卡', type:'loot', val:18000, rarity:'rare', desc:'最新款显卡，矿老板最爱' },
+  bitcoin:     { name:'🪙比特币', type:'loot', val:40000, rarity:'epic', desc:'虚拟黄金' },
+  ledx:        { name:'💡LEDX治疗仪', type:'loot', val:80000, rarity:'legendary', desc:'极其稀有的军用医疗设备' },
+  ancient_vase:{ name:'🏺古董花瓶', type:'loot', val:35000, rarity:'epic', desc:'价值连城的古董' },
+  intel_folder:{ name:'📁情报文件夹', type:'loot', val:25000, rarity:'epic', desc:'机密军事文件' },
+  golden_skull:{ name:'💀黄金头骨', type:'loot', val:100000, rarity:'legendary', desc:'传说中的宝藏' },
+
+  // Keys
+  key_factory:  { name:'🔑工厂钥匙', type:'key', val:5000, rarity:'uncommon', desc:'可打开工厂上锁房间' },
+  key_armory:   { name:'🗝️军械库钥匙', type:'key', val:15000, rarity:'rare', desc:'可打开武器库' },
+  keycard_red:  { name:'🔴红卡', type:'key', val:80000, rarity:'legendary', desc:'实验室最高权限门卡' },
+
+  // Containers
+  ammo_case:   { name:'📦弹药箱', type:'container', capacity:12, onlyAmmo:true, weight:1.5, val:8000, rarity:'rare', desc:'大量储存弹药' },
+  med_case:    { name:'💼医疗箱', type:'container', capacity:8, onlyMed:true, weight:1, val:6000, rarity:'rare', desc:'储存医疗用品' },
+  key_tool:    { name:'🔧钥匙工具', type:'container', capacity:6, onlyKey:true, weight:0.5, val:3000, rarity:'uncommon', desc:'存放钥匙和卡片' },
+
+  // Hideout materials
+  scrap:    { name:'🔩零件', type:'material', val:150, rarity:'common', desc:'各种金属零件' },
+  wire:     { name:'🔌电线', type:'material', val:250, rarity:'common', desc:'铜芯电线' },
+  circuit:  { name:'🔋电路板', type:'material', val:2000, rarity:'uncommon', desc:'精密电路板' },
+  cpu_fan:  { name:'🌀CPU风扇', type:'material', val:3500, rarity:'uncommon', desc:'高性能散热风扇' },
+  motor:    { name:'⚙️马达', type:'material', val:5000, rarity:'rare', desc:'大功率电动机' },
+  sensor:   { name:'📡传感器', type:'material', val:8000, rarity:'epic', desc:'军用级传感器' },
+
+  // Food
+  crackers:  { name:'🍘压缩饼干', type:'food', energy:15, weight:0.2, val:100, rarity:'common', desc:'充饥用' },
+  mre:       { name:'🍱MRE口粮', type:'food', energy:40, weight:0.5, val:500, rarity:'uncommon', desc:'军用即食口粮' },
+  energy_drink: { name:'🥤能量饮料', type:'food', energy:25, hyd:30, weight:0.3, val:300, rarity:'common', desc:'提神醒脑' },
+};
+
+// ─── MAPS ────────────────────────────────────────────────────
+
+const MAPS = {
+  suburbs: {
+    name: '🏘️ 城郊住宅区',
+    desc: '新手友好的小镇郊区。6×6地图，产出基础物资和少量稀有物品。',
+    size: 6,
+    difficulty: 1,
+    extractTime: 12,  // enough for crossing map: spawn(0,0) to extract(5,5) = 10 steps + 2 for looting
+    lootBudget: 30,
+    enemyCount: [3,6],
+    bossChance: 1.0,  // guaranteed boss
+    entryFee: 0,
+    minLevel: 0,
+    lootPool: { common:1, uncommon:0.4, rare:0.15, epic:0.03, legendary:0.005 },
+    specialLoot: [],
+    terrain: { hazards:2, locked:1 },
+  },
+  factory: {
+    name: '🏭 废弃工厂',
+    desc: '中型工业区，8×8地图。有上锁的车间和危险区域，钥匙和材料丰富。',
+    size: 8,
+    difficulty: 2,
+    extractTime: 18,  // 7*2=14 to cross + buffer
+    lootBudget: 50,
+    enemyCount: [5,10],
+    bossChance: 1.0,
+    entryFee: 3000,
+    minLevel: 3,
+    lootPool: { common:0.7, uncommon:0.5, rare:0.25, epic:0.08, legendary:0.02 },
+    specialLoot: ['key_factory','circuit','motor'],
+    terrain: { hazards:4, locked:2 },
+  },
+  mall: {
+    name: '🛍️ 中央商场',
+    desc: '大型商业综合体，10×10地图。奢侈品和电子产品应有尽有。',
+    size: 10,
+    difficulty: 3,
+    extractTime: 24,  // 9*2=18 + buffer
+    lootBudget: 80,
+    enemyCount: [8,14],
+    bossChance: 1.0,
+    entryFee: 8000,
+    minLevel: 6,
+    lootPool: { common:0.5, uncommon:0.6, rare:0.35, epic:0.15, legendary:0.04 },
+    specialLoot: ['wristwatch','diamond','gpu','ledx'],
+    terrain: { hazards:5, locked:3 },
+  },
+  lab: {
+    name: '🧪 地下实验室',
+    desc: '军方秘密研究设施，12×12地图。顶级装备和传说级宝物。',
+    size: 12,
+    difficulty: 4,
+    extractTime: 30,  // 11*2=22 + buffer
+    lootBudget: 120,
+    enemyCount: [10,20],
+    bossChance: 1.0,
+    entryFee: 25000,
+    minLevel: 10,
+    lootPool: { common:0.3, uncommon:0.5, rare:0.45, epic:0.25, legendary:0.08 },
+    specialLoot: ['keycard_red','ledx','sensor','golden_skull','bitcoin'],
+    terrain: { hazards:8, locked:5 },
+  },
+};
+
+// ─── TRADERS ──────────────────────────────────────────────────
+
+const TRADERS = {
+  peacekeeper: {
+    name: '和平使者 🕊️', color: '#60a5fa',
+    desc: '前联合国维和部队军需官，出售进口武器弹药',
+    level: 1, maxLevel: 4,
+    levelUpCosts: [0, 5000, 30000, 100000],
+    levelUpSpendReqs: [0, 20000, 100000, 500000],
+    stock: {
+      weapon: ['pistol','smg','rifle','shotgun'],
+      ammo: ['ammo_9mm','ammo_556','ammo_12g'],
+      armor: ['vest_t1','helmet_l1'],
+      backpack: ['bp_sling'],
+      rig: ['rig_l1'],
+    },
+  },
+  prapor: {
+    name: '帕拉波尔 🪖', color: '#fb923c',
+    desc: '前苏联军需官，出售俄式重火力和护甲',
+    level: 1, maxLevel: 4,
+    levelUpCosts: [0, 8000, 40000, 150000],
+    levelUpSpendReqs: [0, 30000, 150000, 800000],
+    stock: {
+      weapon: ['dmr','sniper','rifle'],
+      ammo: ['ammo_762','ammo_338','ammo_556'],
+      armor: ['vest_t3','helmet_l3'],
+      backpack: ['bp_scav','bp_combat'],
+      rig: ['rig_l2'],
+    },
+  },
+  therapist: {
+    name: '治疗师 💚', color: '#34d399',
+    desc: '战地医生，出售医疗用品和食物',
+    level: 1, maxLevel: 4,
+    levelUpCosts: [0, 3000, 15000, 50000],
+    levelUpSpendReqs: [0, 10000, 50000, 200000],
+    stock: {
+      medical: ['bandage','ai2','salewa','surgery'],
+      container: ['med_case'],
+      food: ['crackers','mre','energy_drink'],
+      backpack: ['bp_sling'],
+    },
+  },
+  skier: {
+    name: '滑雪者 🎿', color: '#e2e8f0',
+    desc: '黑市商人，买卖贵重物品，偶尔有稀有装备',
+    level: 1, maxLevel: 4,
+    levelUpCosts: [0, 10000, 50000, 200000],
+    levelUpSpendReqs: [0, 50000, 200000, 1000000],
+    stock: {
+      weapon: ['knife','pistol','smg','shotgun','dmr','sniper'],
+      armor: ['vest_t5','helmet_l5'],
+      container: ['ammo_case','key_tool'],
+      loot: ['gold_ring','gold_chain','wristwatch','diamond','bitcoin'],
+      backpack: ['bp_assault'],
+    },
+  },
+};
+
+// ─── HIDEOUT ──────────────────────────────────────────────────
+
+const HIDEOUT_MODULES = {
+  generator: {
+    name: '⚡发电机', desc: '提供电力，解锁其他设施',
+    levels: [
+      { cost:{scrap:5,wire:3}, effect:{hideoutPower:1} },
+      { cost:{scrap:15,wire:8,motor:2}, effect:{hideoutPower:2} },
+      { cost:{scrap:30,circuit:5,motor:5}, effect:{hideoutPower:3} },
+    ]
+  },
+  workbench: {
+    name: '🔧工作台', desc: '修理武器，制作弹药',
+    levels: [
+      { cost:{scrap:10,wire:5}, effect:{repairBonus:10, craft:'basic'} },
+      { cost:{scrap:25,motor:3,circuit:3}, effect:{repairBonus:25, craft:'advanced'} },
+      { cost:{scrap:50,circuit:8,sensor:2}, effect:{repairBonus:50, craft:'master'} },
+    ]
+  },
+  medstation: {
+    name: '🏥医疗站', desc: '战后自动回复部分生命值',
+    levels: [
+      { cost:{scrap:8,wire:4}, effect:{healAfterRaid:20} },
+      { cost:{scrap:20,circuit:4,motor:1}, effect:{healAfterRaid:50} },
+      { cost:{scrap:40,circuit:6,sensor:2}, effect:{healAfterRaid:100} },
+    ]
+  },
+  intelligence: {
+    name: '📡情报中心', desc: '降低入场费，提高稀有物品掉落',
+    levels: [
+      { cost:{scrap:15,circuit:5,wire:10}, effect:{feeReduction:15, dropBonus:5} },
+      { cost:{scrap:30,circuit:10,sensor:4}, effect:{feeReduction:30, dropBonus:12} },
+      { cost:{scrap:60,sensor:8,motor:10}, effect:{feeReduction:50, dropBonus:25} },
+    ]
+  },
+  stash: {
+    name: '📦储物箱', desc: '增加仓库容量',
+    levels: [
+      { cost:{scrap:12,wire:6}, effect:{stashSlots:10} },
+      { cost:{scrap:25,circuit:4,motor:2}, effect:{stashSlots:25} },
+      { cost:{scrap:50,circuit:8,sensor:3}, effect:{stashSlots:50} },
+    ]
+  },
+};
+
+// ─── GAME STATE ───────────────────────────────────────────────
+
+const DEFAULT_STATE = {
+  money: 5000,
+  level: 1,
+  xp: 0,
+  stash: {}, // { itemId: { qty, dura? } }
+  stashSlots: 20,
+  equipped: {
+    weapon: null,
+    armor: [], // can equip vest + helmet
+    backpack: null,
+    rig: null,
+  },
+  bodyHp: { head:35, thorax:85, stomach:70, lArm:60, rArm:60, lLeg:65, rLeg:65 },
+  bodyMaxHp: { head:35, thorax:85, stomach:70, lArm:60, rArm:60, lLeg:65, rLeg:65 },
+  energy: 100,
+  hydration: 100,
+  traders: {
+    peacekeeper: { level:1, spend:0 },
+    prapor: { level:1, spend:0 },
+    therapist: { level:1, spend:0 },
+    skier: { level:1, spend:0 },
+  },
+  hideout: {
+    generator: 0,
+    workbench: 0,
+    medstation: 0,
+    intelligence: 0,
+    stash: 0,
+  },
+  stats: { raids:0, survived:0, killed:0, died:0, totalLoot:0 },
+  adWatchCooldown: 0, // timestamp
+  currentRaid: null,
+  // Secure container (保险箱) — items here survive death
+  secureContainer: { level: 1, slots: 2, items: {} },
+  // Tasks
+  tasks: {
+    active: [], // { id, progress, completed }
+    completed: [],
+  },
+};
+
+let G = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// ─── HELPERS ──────────────────────────────────────────────────
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+function rand(min,max) { return Math.floor(Math.random()*(max-min+1))+min; }
+function randf(min,max) { return Math.random()*(max-min)+min; }
+function pick(arr) { return arr[rand(0,arr.length-1)]; }
+function pickWeighted(arr, weightFn) {
+  const total = arr.reduce((s,e)=>s+weightFn(e),0);
+  let r = Math.random()*total;
+  for (const e of arr) { r -= weightFn(e); if (r <= 0) return e; }
+  return arr[arr.length-1];
+}
+function clamp(v,lo,hi) { return Math.max(lo,Math.min(hi,v)); }
+function fmtMoney(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000) return (n/1000).toFixed(1)+'K';
+  return ''+n;
+}
+
+function toast(msg, type='info') {
+  const container = $('#toasts');
+  const el = document.createElement('div');
+  el.className = 'toast toast-'+type;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+function getItem(id) {
+  return ITEMS[id] || null;
+}
+
+function rarityColor(r) { return RARITY[r]?.color || '#94a3b8'; }
+function rarityName(r) { return RARITY[r]?.name || r; }
+
+// Xp for level
+function xpForLevel(lv) { return Math.floor(100 * Math.pow(1.5, lv-1)); }
+
+// Inventory helpers
+function stashCount() {
+  let n = 0;
+  for (const k of Object.keys(G.stash)) {
+    n += G.stash[k].qty || 1;
+  }
+  return n;
+}
+function stashSlotsUsed() {
+  let n = 0;
+  for (const k of Object.keys(G.stash)) {
+    n += Math.ceil((G.stash[k].qty || 1) / (getItem(k)?.stackSize || 99));
+  }
+  return n;
+}
+
+// Active hideout effects
+function hideoutEffect(key) {
+  let v = 0;
+  for (const [modId, lv] of Object.entries(G.hideout)) {
+    if (!lv) continue;
+    const mod = HIDEOUT_MODULES[modId];
+    if (!mod) continue;
+    const level = mod.levels[lv-1];
+    if (level?.effect[key] !== undefined) {
+      v += level.effect[key];
+    }
+  }
+  return v;
+}
+
+// Equipped backpack slots
+function backpackSlots() {
+  const bp = G.equipped.backpack ? getItem(G.equipped.backpack) : null;
+  return bp?.slots || 4; // default 4 pockets
+}
+function rigSlots() {
+  const rig = G.equipped.rig ? getItem(G.equipped.rig) : null;
+  return rig?.slots || 0;
+}
+function totalCarrySlots() { return backpackSlots() + rigSlots(); }
+
+// Armor protection for zone
+function armorProt(zone) {
+  let p = 0;
+  for (const armorId of G.equipped.armor) {
+    if (!armorId) continue;
+    const a = getItem(armorId);
+    if (a && a.zones.includes(zone)) p = Math.max(p, a.prot);
+  }
+  return p;
+}
+
+// ─── MAP GENERATION ───────────────────────────────────────────
+
+function generateMap(mapId) {
+  const mapDef = MAPS[mapId];
+  const size = mapDef.size;
+  const cells = [];
+
+  for (let r = 0; r < size; r++) {
+    cells[r] = [];
+    for (let c = 0; c < size; c++) {
+      cells[r][c] = { type:'empty', explored:false, loot:[], enemy:null, locked:false };
+    }
+  }
+
+  // Place spawn (top-left area)
+  const spawnR = rand(0,1);
+  const spawnC = rand(0,1);
+  cells[spawnR][spawnC].type = 'spawn';
+  cells[spawnR][spawnC].explored = true;
+
+  // Place extracts (opposite side from spawn) — always visible
+  const extractPoints = [];
+  for (let i = 0; i < 3; i++) {
+    let er, ec;
+    do {
+      er = rand(size-3, size-1);
+      ec = rand(size-3, size-1);
+    } while (cells[er][ec].type !== 'empty');
+    cells[er][ec].type = 'extract';
+    cells[er][ec].explored = true; // extracts are visible from start
+    extractPoints.push({r:er,c:ec});
+  }
+
+  // Place high-value zone (center area, revealed on map, bonus loot density)
+  const hvzR = Math.floor(size/2);
+  const hvzC = Math.floor(size/2);
+  const hvzCells = [];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      const rr = hvzR+dr, cc = hvzC+dc;
+      if (rr >= 0 && rr < size && cc >= 0 && cc < size && cells[rr][cc].type === 'empty') {
+        hvzCells.push({r:rr,c:cc});
+      }
+    }
+  }
+  // Mark high-value zone cells; they keep their type but get bonus loot later
+  const isHighValueZone = (r,c) => Math.abs(r-hvzR)<=1 && Math.abs(c-hvzC)<=1;
+
+  // Place hazards
+  for (let i = 0; i < (mapDef.terrain?.hazards || 0); i++) {
+    let hr, hc;
+    do {
+      hr = rand(1,size-2); hc = rand(1,size-2);
+    } while (cells[hr][hc].type !== 'empty');
+    cells[hr][hc].type = 'hazard';
+    cells[hr][hc].hazardDmg = rand(8,20);
+  }
+
+  // Place locked rooms
+  for (let i = 0; i < (mapDef.terrain?.locked || 0); i++) {
+    let lr, lc;
+    do {
+      lr = rand(1,size-2); lc = rand(1,size-2);
+    } while (cells[lr][lc].type !== 'empty');
+    cells[lr][lc].type = 'locked';
+    cells[lr][lc].locked = true;
+  }
+
+  // Place loot — distribute lootBudget items across the map, each cell can hold multiple items
+  const dropBonus = hideoutEffect('dropBonus') / 100;
+  // First decide how many loot cells to create
+  const lootCellCount = Math.floor(mapDef.lootBudget * 0.7 + rand(0, Math.floor(mapDef.lootBudget * 0.3)));
+  const itemsPerCell = mapDef.lootBudget / Math.max(lootCellCount, 1);
+
+  for (let i = 0; i < lootCellCount; i++) {
+    let lr, lc;
+    let tries = 0;
+    do {
+      lr = rand(0, size-1); lc = rand(0, size-1);
+      tries++;
+    } while (tries < 50 && cells[lr][lc].type !== 'empty' && cells[lr][lc].type !== 'locked');
+    // Generate 1-4 items per cell
+    const cellItemCount = rand(1, Math.max(1, Math.ceil(itemsPerCell)));
+    for (let j = 0; j < cellItemCount; j++) {
+      const item = generateLootItem(mapDef, dropBonus);
+      if (item) {
+        cells[lr][lc].type = cells[lr][lc].type === 'locked' ? 'locked' : 'loot';
+        // High-value zone: bonus rarity
+        const bonusItem = isHighValueZone(lr, lc) ? generateLootItem(mapDef, dropBonus + 0.15) : null;
+        cells[lr][lc].loot.push(item);
+        if (bonusItem) cells[lr][lc].loot.push(bonusItem);
+      }
+    }
+    // Also spawn some loose items on empty cells
+    if (cells[lr][lc].type === 'empty') {
+      cells[lr][lc].type = 'loot';
+    }
+  }
+
+  // Extra: scatter a few more loose items
+  const extraLoose = Math.floor(mapDef.lootBudget * 0.3);
+  for (let i = 0; i < extraLoose; i++) {
+    let lr, lc;
+    let tries = 0;
+    do {
+      lr = rand(0, size-1); lc = rand(0, size-1);
+      tries++;
+    } while (tries < 30 && (cells[lr][lc].type !== 'empty' && cells[lr][lc].type !== 'loot'));
+    const item = generateLootItem(mapDef, dropBonus);
+    if (item) {
+      if (cells[lr][lc].type === 'empty') cells[lr][lc].type = 'loot';
+      cells[lr][lc].loot.push(item);
+    }
+  }
+
+  // Place enemies
+  const enemyN = rand(mapDef.enemyCount[0], mapDef.enemyCount[1]);
+  for (let i = 0; i < enemyN; i++) {
+    let er, ec;
+    do {
+      er = rand(1,size-2); ec = rand(1,size-2);
+    } while (cells[er][ec].type !== 'empty' && cells[er][ec].type !== 'loot');
+    const enemy = generateEnemy(mapDef.difficulty);
+    // Enemy loot is dropped on kill via enemyKilled() — do NOT push to cell.loot here to avoid duplication
+    cells[er][ec].enemy = enemy;
+    if (cells[er][ec].type === 'empty') cells[er][ec].type = 'enemy';
+  }
+
+  // Boss — guaranteed one per map
+  let br, bc;
+  {
+    let tries = 0;
+    do {
+      br = rand(2, size-3); bc = rand(2, size-3);
+      tries++;
+    } while (tries < 100 && (cells[br][bc].enemy || cells[br][bc].type === 'extract' || cells[br][bc].type === 'spawn'));
+    cells[br][bc].enemy = generateBoss(mapDef.difficulty);
+    cells[br][bc].type = 'boss';
+    cells[br][bc].explored = true; // boss is visible on map
+  }
+
+  return {
+    mapId,
+    cells,
+    size,
+    extractPoints,
+    playerR: spawnR,
+    playerC: spawnC,
+    turnsLeft: mapDef.extractTime,
+    totalTurns: mapDef.extractTime,
+    carried: {}, // loot carried during raid
+    secureSlotsUsed: 0, // how many secure container slots used this raid
+  };
+}
+
+function generateLootItem(mapDef, dropBonus) {
+  const pool = mapDef.lootPool;
+  let rarityRoll = Math.random() + dropBonus;
+  let rarity;
+  if (rarityRoll > 0.95) rarity = 'legendary';
+  else if (rarityRoll > 0.85) rarity = 'epic';
+  else if (rarityRoll > 0.65) rarity = 'rare';
+  else if (rarityRoll > 0.40) rarity = 'uncommon';
+  else rarity = 'common';
+
+  // Also check pool weight
+  if (pool[rarity] === undefined || Math.random() > pool[rarity]) {
+    // Drop down one tier
+    const tiers = ['legendary','epic','rare','uncommon','common'];
+    const idx = tiers.indexOf(rarity);
+    for (let i = idx+1; i < tiers.length; i++) {
+      if (pool[tiers[i]] > 0 && Math.random() < pool[tiers[i]]) {
+        rarity = tiers[i]; break;
+      }
+    }
+  }
+
+  // Special loot bias
+  if (mapDef.specialLoot?.length && Math.random() < 0.3) {
+    return { ...ITEMS[pick(mapDef.specialLoot)], id: pick(mapDef.specialLoot) };
+  }
+
+  const candidates = Object.entries(ITEMS)
+    .filter(([id,item]) => item.rarity === rarity && item.type !== 'backpack' && item.type !== 'rig' && item.type !== 'armor')
+    .map(([id,item]) => ({...item, id}));
+  if (candidates.length === 0) candidates.push(...Object.entries(ITEMS).filter(([id,item])=>item.rarity==='common').map(([id,item])=>({...item,id})));
+  const picked = pick(candidates);
+  return {...picked, id:picked.id};
+}
+
+function generateEnemy(difficulty) {
+  const names = ['拾荒者','强盗','疯子','暴徒','雇佣兵','哨兵','巡逻兵','守卫'];
+  const hp = 30 + difficulty * 25 + rand(-10,15);
+  const dmg = 8 + difficulty * 7 + rand(-3,5);
+  const acc = 30 + difficulty * 8 + rand(-5,10);
+  return {
+    name: pick(names),
+    hp, maxHp: hp,
+    dmg, acc,
+    loot: generateEnemyLoot(difficulty),
+    isBoss: false,
+  };
+}
+
+function generateBoss(difficulty) {
+  const names = ['💀领主','🔥屠杀者','👹军阀','⚡收割者','🌪️暴君'];
+  const hp = 120 + difficulty * 60 + rand(-20,40);
+  const dmg = 20 + difficulty * 15 + rand(-5,10);
+  const acc = 50 + difficulty * 10;
+  return {
+    name: pick(names),
+    hp, maxHp: hp,
+    dmg, acc,
+    loot: generateEnemyLoot(difficulty+2),
+    isBoss: true,
+  };
+}
+
+function generateEnemyLoot(diff) {
+  const items = [];
+  const count = rand(0, 3 + diff);
+  const lootPool = ['gold_ring','gold_chain','wristwatch','diamond','scrap','wire','circuit','cpu_fan','ammo_9mm','ammo_556','ammo_762','bandage','ai2','crackers','energy_drink'];
+  for (let i = 0; i < count; i++) {
+    items.push({...ITEMS[pick(lootPool)], id:pick(lootPool)});
+  }
+  return items;
+}
+
+// ─── RAID LOGIC ───────────────────────────────────────────────
+
+function startRaid(mapId) {
+  const mapDef = MAPS[mapId];
+  // Check level requirement
+  if (G.level < mapDef.minLevel) {
+    toast('需要等级 '+mapDef.minLevel+' 才能进入此地图！', 'error');
+    return false;
+  }
+  // Check entry fee
+  let fee = mapDef.entryFee;
+  const feeRed = hideoutEffect('feeReduction') / 100;
+  fee = Math.floor(fee * (1-feeRed));
+  if (G.money < fee) {
+    toast('🔻 入场费不足！需要 ¥'+fmtMoney(fee), 'error');
+    return false;
+  }
+  G.money -= fee;
+  // Energy/hydration: restore a bit when starting a raid (or cap at 100 if full)
+  G.energy = Math.min(100, G.energy + 30);
+  G.hydration = Math.min(100, G.hydration + 20);
+  G.currentRaid = generateMap(mapId);
+  G.currentRaid.feePaid = fee;
+  toast('' + mapDef.name + ' 探索开始！', 'info');
+  renderAll();
+  return true;
+}
+
+function extractRaid(survived) {
+  if (survived === undefined) survived = true;
+  if (!G.currentRaid) return;
+  var raid = G.currentRaid;
+
+  // Kill any pending setTimeout callbacks by clearing enemy
+  raid.currentEnemy = null;
+
+  // Clear the raid screen BEFORE extractRaid renders main, to avoid stale raid DOM
+  var rs = document.getElementById('screen-raid');
+  if (rs) { rs.innerHTML = ''; rs.classList.remove('active'); }
+
+  // Remove any lingering overlays
+  var overlays = document.querySelectorAll('.combat-overlay');
+  for (var i = 0; i < overlays.length; i++) overlays[i].remove();
+
+  G.stats.raids++;
+
+  if (survived) {
+    G.stats.survived++;
+    // Transfer carried items to stash
+    let lootValue = 0;
+    for (const [itemId, qty] of Object.entries(raid.carried)) {
+      addToStash(itemId, qty);
+      const item = getItem(itemId);
+      if (item) lootValue += item.val * qty;
+    }
+    G.stats.totalLoot += lootValue;
+
+    // Secure container items also make it back (added to stash separately)
+    if (raid.secureSlotsUsed > 0) {
+      for (const [itemId, qty] of Object.entries(G.secureContainer.items)) {
+        addToStash(itemId, qty);
+        G.stats.totalLoot += (getItem(itemId)?.val || 0) * qty;
+      }
+      G.secureContainer.items = {};
+      raid.secureSlotsUsed = 0;
+    }
+
+    // XP gain
+    const xpGain = 50 + Math.floor(lootValue / 100) + (G.currentRaid.enemiesKilled || 0) * 20;
+    G.xp += xpGain;
+    while (G.xp >= xpForLevel(G.level)) {
+      G.xp -= xpForLevel(G.level);
+      G.level++;
+      toast('🎉 升级！现在等级 '+G.level+'！', 'success');
+    }
+
+    toast('✅ 成功撤离！获得 ¥'+fmtMoney(lootValue), 'success');
+    // Track for tasks
+    if (!G._mapExtracts) G._mapExtracts = {};
+    G._mapExtracts[raid.mapId] = (G._mapExtracts[raid.mapId]||0)+1;
+    G._lastRaidLootValue = lootValue;
+  } else {
+    G.stats.died++;
+    // On death: lose carried items AND equipped gear (except secure container)
+    toast('💀 你阵亡了...携带物品和装备全部丢失', 'error');
+
+    // Full heal on death (new body, fresh start)
+    for (const part of BODY_PARTS) {
+      G.bodyHp[part] = G.bodyMaxHp[part];
+    }
+    G.energy = 100;
+    G.hydration = 100;
+
+    // Clear equipped gear
+    G.equipped.weapon = null;
+    G.equipped.armor = [];
+    G.equipped.backpack = null;
+    G.equipped.rig = null;
+
+    // But secure container items survive!
+    if (raid.secureSlotsUsed > 0) {
+      let survivedValue = 0;
+      for (const [itemId, qty] of Object.entries(G.secureContainer.items)) {
+        addToStash(itemId, qty);
+        survivedValue += (getItem(itemId)?.val || 0) * qty;
+      }
+      G.secureContainer.items = {};
+      raid.secureSlotsUsed = 0;
+      if (survivedValue > 0) {
+        toast('🔒 保险箱里的物品保住了！价值 ¥'+fmtMoney(survivedValue), 'success');
+      }
+    }
+  }
+
+  // Heal from hideout medstation
+  const healAmt = hideoutEffect('healAfterRaid');
+  if (healAmt > 0) {
+    for (const part of BODY_PARTS) {
+      G.bodyHp[part] = Math.min(G.bodyMaxHp[part], G.bodyHp[part] + healAmt);
+    }
+  }
+
+  G.currentRaid = null;
+  checkTaskProgress();
+  renderAll();
+  saveGame();
+}
+
+function moveTo(r, c) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  if (raid.turnsLeft <= 0) return;
+
+  // Check adjacency
+  const dr = Math.abs(r - raid.playerR);
+  const dc = Math.abs(c - raid.playerC);
+  if (dr+dc !== 1) return;
+
+  // Save old position in case we need to bounce back
+  const oldR = raid.playerR;
+  const oldC = raid.playerC;
+
+  raid.playerR = r;
+  raid.playerC = c;
+  raid.turnsLeft--;
+
+  // Energy consumption: each move drains energy
+  G.energy = Math.max(0, G.energy - 2);
+  G.hydration = Math.max(0, G.hydration - 1);
+  if (G.energy <= 0) {
+    // Starvation damage
+    const part = pick(BODY_PARTS);
+    G.bodyHp[part] = Math.max(0, G.bodyHp[part] - 5);
+    toast('🍞 体力耗尽！' + BODY_NAMES[part] + ' 受到 5 点饥饿伤害', 'error');
+    if (checkDeath()) return;
+  }
+
+  const cell = raid.cells[r][c];
+  cell.explored = true;
+
+  if (cell.type === 'extract') {
+    renderAll();
+    setTimeout(() => extractRaid(true), 300);
+    return;
+  }
+
+  if (cell.type === 'hazard') {
+    const dmg = cell.hazardDmg || 15;
+    const part = pick(BODY_PARTS);
+    G.bodyHp[part] = Math.max(0, G.bodyHp[part] - dmg);
+    toast('☣️ 踩到危险区域！'+BODY_NAMES[part]+' 受到 '+dmg+' 伤害', 'error');
+    if (G.bodyHp[part] <= 0) {
+      toast(BODY_NAMES[part]+' 断裂了！需要手术包修复', 'error');
+    }
+    if (checkDeath()) return;
+  }
+
+  if (cell.enemy) {
+    raid.currentEnemy = { ...cell.enemy };
+    raid.enemyR = r;
+    raid.enemyC = c;
+    raid.enemiesKilled = raid.enemiesKilled || 0;
+    showCombatUI();
+    return;
+  }
+
+  if (cell.type === 'locked' && cell.locked) {
+    // Check for key
+    const hasKey = Object.keys(raid.carried).some(id => getItem(id)?.type === 'key');
+    if (hasKey) {
+      cell.locked = false;
+      toast('🔓 使用钥匙打开了上锁的房间！', 'info');
+    } else {
+      // Try force breach
+      const breachChance = 0.3;
+      if (Math.random() < breachChance) {
+        cell.locked = false;
+        toast('🔨 强行破门成功！', 'info');
+      } else {
+        // Failure: slam into door, take damage and lose the turn
+        var breachDmg = rand(10, 25);
+        var breachPart = pick(['lArm','rArm','thorax']);
+        G.bodyHp[breachPart] = Math.max(0, G.bodyHp[breachPart] - breachDmg);
+        toast('🔒 破门失败！' + BODY_NAMES[breachPart] + '撞伤 -' + breachDmg + 'HP', 'error');
+        raid.playerR = oldR;
+        raid.playerC = oldC;
+        raid.turnsLeft++; // refund turn but keep damage
+        if (checkDeath()) return;
+        renderAll();
+        return;
+      }
+    }
+  }
+
+  // Pick up loot — a cell can have multiple items; always show UI so player can re-visit
+  if (cell.loot && cell.loot.length > 0) {
+    showLootPickupUI(r, c);
+    return;
+  }
+
+  if (raid.turnsLeft <= 0) {
+    // Already warned once — now it's fatal
+    if (raid.miaWarned) {
+      toast('💀 未能及时撤离，行动失败！携带物品全部丢失', 'error');
+      extractRaid(false);
+      return;
+    }
+    toast('⏰ 时间耗尽！开始计时撤离...', 'error');
+    raid.miaWarned = true;
+    if (typeof showMIADialog === 'function') {
+      showMIADialog();
+    } else {
+      // Fallback: auto-die if no dialog
+      toast('💀 未能及时撤离，行动失败！携带物品全部丢失', 'error');
+      extractRaid(false);
+    }
+    return;
+  }
+
+  renderAll();
+}
+
+function checkDeath() {
+  if (!G.currentRaid) return true; // already dead/extracted
+  // If thorax or head reaches 0 -> dead
+  if (G.bodyHp.thorax <= 0 || G.bodyHp.head <= 0) {
+    toast('💀 致命伤！你阵亡了...', 'error');
+    // Remove any overlays first
+    const overlays = document.querySelectorAll('.combat-overlay');
+    overlays.forEach(o => o.remove());
+    // Clear enemy ref to prevent async enemyAttack from firing
+    if (G.currentRaid) G.currentRaid.currentEnemy = null;
+    extractRaid(false);
+    return true;
+  }
+  // If 3+ limbs blacked out -> dead
+  const blacked = BODY_PARTS.filter(p => G.bodyHp[p] <= 0).length;
+  if (blacked >= 3) {
+    toast('💀 多处重伤，失血过多...', 'error');
+    const overlays = document.querySelectorAll('.combat-overlay');
+    overlays.forEach(o => o.remove());
+    if (G.currentRaid) G.currentRaid.currentEnemy = null;
+    extractRaid(false);
+    return true;
+  }
+  return false;
+}
+
+// ─── COMBAT ───────────────────────────────────────────────────
+
+function showCombatUI() {
+  const raid = G.currentRaid;
+  if (!raid?.currentEnemy) return;
+  renderCombatOverlay();
+}
+
+function hideCombatUI() {
+  const el = $('#combat-overlay');
+  if (el) el.remove();
+}
+
+function playerAttack(targetPart) {
+  const raid = G.currentRaid;
+  if (!raid?.currentEnemy) return;
+  const enemy = raid.currentEnemy;
+  const wep = G.equipped.weapon ? getItem(G.equipped.weapon) : { dmg:10, acc:80, firerate:1 };
+
+  // Hit calculation: base weapon accuracy, reduced by enemy evasion (based on difficulty)
+  const enemyEvasion = 10 + (enemy.isBoss ? 15 : 5);
+  const distanceFactor = 20; // mid-range default
+  let hitChance = clamp(wep.acc - enemyEvasion + distanceFactor/2, 5, 95);
+
+  // Headshot penalty: harder to hit head
+  const partMultiplier = {
+    head: 0.45,
+    thorax: 1.0,
+    stomach: 0.85,
+    lArm: 0.7,
+    rArm: 0.7,
+    lLeg: 0.65,
+    rLeg: 0.65,
+  };
+  hitChance = Math.floor(hitChance * (partMultiplier[targetPart] || 1.0));
+
+  const hits = Math.random() * 100 < hitChance;
+
+  let dmgDealt = 0;
+  let dmgType = 'normal';
+  if (hits) {
+    dmgDealt = rand(Math.floor(wep.dmg*0.7), Math.ceil(wep.dmg*1.3));
+    // Headshot: double damage but harder to hit
+    if (targetPart === 'head') {
+      dmgDealt = Math.floor(dmgDealt * 2.5);
+      dmgType = 'headshot';
+    }
+    // Thorax hit is standard
+    // Limb hits do less
+    if (['lArm','rArm','lLeg','rLeg'].includes(targetPart)) {
+      dmgDealt = Math.floor(dmgDealt * 0.65);
+      dmgType = 'limb';
+    }
+    enemy.hp -= dmgDealt;
+  }
+
+  addCombatLog(hits, dmgDealt, targetPart, true);
+  renderCombatStatus();
+
+  if (enemy.hp <= 0) {
+    enemyKilled();
+    return;
+  }
+
+  // Enemy attacks back
+  setTimeout(() => enemyAttack(), 500);
+}
+
+function enemyAttack() {
+  const raid = G.currentRaid;
+  if (!raid?.currentEnemy) return;
+  const enemy = raid.currentEnemy;
+
+  // Target a body part — weighted but heads are hard to hit
+  const targetPart = pickWeighted(BODY_PARTS, p => BODY_HIT_WEIGHT[p]);
+  const hitChance = clamp(enemy.acc, 8, 80);
+
+  // Enemies also have reduced headshot accuracy
+  const enemyPartMultiplier = {
+    head: 0.5,
+    thorax: 1.0,
+    stomach: 0.9,
+    lArm: 0.75,
+    rArm: 0.75,
+    lLeg: 0.7,
+    rLeg: 0.7,
+  };
+  const finalHitChance = Math.floor(hitChance * (enemyPartMultiplier[targetPart] || 1.0));
+  const hits = Math.random() * 100 < finalHitChance;
+
+  let rawDmg = 0;
+  if (hits) {
+    rawDmg = rand(Math.floor(enemy.dmg*0.7), Math.ceil(enemy.dmg*1.3));
+  }
+
+  // Apply armor
+  const prot = armorProt(targetPart);
+  const dmgBlocked = Math.floor(rawDmg * (prot / 100));
+  let dmgDealt = Math.max(0, rawDmg - dmgBlocked);
+
+  G.bodyHp[targetPart] = Math.max(0, G.bodyHp[targetPart] - dmgDealt);
+
+  addCombatLog(hits, dmgDealt, targetPart, false);
+  renderCombatStatus();
+
+  if (checkDeath()) {
+    hideCombatUI();
+  }
+}
+
+function enemyKilled() {
+  const raid = G.currentRaid;
+  const enemy = raid.currentEnemy;
+  raid.enemiesKilled = (raid.enemiesKilled || 0) + 1;
+  G.stats.killed++;
+
+  toast('💥 击杀了 ' + enemy.name + '！', 'success');
+
+  // Track boss kills
+  if (enemy.isBoss) {
+    G.stats.bossKills = (G.stats.bossKills || 0) + 1;
+    toast('👑 Boss击杀！', 'success');
+  }
+
+  // Loot enemy — items go straight to carried; excess stays on cell
+  if (enemy.loot && enemy.loot.length > 0) {
+    const cell = raid.cells[raid.enemyR][raid.enemyC];
+    for (const item of enemy.loot) {
+      const curCarry = Object.values(raid.carried).reduce((s,q)=>s+q, 0);
+      if (curCarry < totalCarrySlots()) {
+        raid.carried[item.id] = (raid.carried[item.id] || 0) + 1;
+      } else {
+        // Inventory full — drop excess on the ground for later pickup
+        cell.loot.push(item);
+      }
+    }
+  }
+
+  // Clear enemy from map
+  raid.cells[raid.enemyR][raid.enemyC].enemy = null;
+  if (raid.cells[raid.enemyR][raid.enemyC].type === 'boss') {
+    raid.cells[raid.enemyR][raid.enemyC].type = 'loot';
+  } else {
+    raid.cells[raid.enemyR][raid.enemyC].type = 'loot';
+  }
+  raid.currentEnemy = null;
+
+  hideCombatUI();
+  renderAll();
+  saveGame();
+
+  // If player is on a cell that still has loot (from the fight), show pickup UI
+  var cell = raid.cells[raid.enemyR][raid.enemyC];
+  if (cell.loot && cell.loot.length > 0 && (cell.type === 'loot' || cell.type === 'empty')) {
+    setTimeout(function() { showLootPickupUI(raid.enemyR, raid.enemyC); }, 100);
+  }
+}
+
+function fleeCombat() {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const fleeChance = 0.5 + (raid.currentEnemy?.isBoss ? -0.2 : 0);
+  if (Math.random() < fleeChance) {
+    toast('🏃 成功逃脱！', 'info');
+    raid.currentEnemy = null;
+    hideCombatUI();
+    renderAll();
+  } else {
+    toast('🚫 逃跑失败！敌人趁机攻击', 'error');
+    enemyAttack();
+  }
+}
+
+function addCombatLog(hit, dmg, part, isPlayer) {
+  const log = $('#combat-log');
+  if (!log) return;
+  const p = document.createElement('div');
+  if (hit) {
+    const hitLabel = part === 'head' ? '💀爆头' : '击中';
+    p.className = 'log-hit';
+    p.textContent = (isPlayer ? ('👊 你'+hitLabel+' ') : ('💢 敌人'+hitLabel+' ')) + BODY_NAMES[part] + ' 造成 ' + dmg + ' 伤害';
+    if (part === 'head') p.style.fontWeight = '700';
+  } else {
+    p.className = 'log-miss';
+    const where = part === 'head' ? '头部' : BODY_NAMES[part];
+    p.textContent = (isPlayer ? '😓 你瞄准'+where+'但打偏了' : '😮‍💨 敌人朝'+where+'攻击落空了') + ' (命中低)';
+  }
+  log.prepend(p);
+  if (log.children.length > 20) log.lastChild.remove();
+}
+
+// ─── STASH & INVENTORY ────────────────────────────────────────
+
+function addToStash(itemId, qty=1) {
+  if (!G.stash[itemId]) G.stash[itemId] = { qty:0 };
+  G.stash[itemId].qty += qty;
+  reclaimStashSpace();
+}
+
+function removeFromStash(itemId, qty=1) {
+  if (!G.stash[itemId]) return false;
+  if (G.stash[itemId].qty < qty) return false;
+  G.stash[itemId].qty -= qty;
+  if (G.stash[itemId].qty <= 0) delete G.stash[itemId];
+  return true;
+}
+
+function reclaimStashSpace() {
+  const limit = 20 + (hideoutEffect('stashSlots') || 0);
+  const used = stashCount();
+  if (used > limit) {
+    // Remove cheapest items first
+    const entries = Object.entries(G.stash).sort((a,b) => {
+      const ia = getItem(a[0])?.val || 0;
+      const ib = getItem(b[0])?.val || 0;
+      return ia - ib;
+    });
+    while (stashCount() > limit && entries.length > 0) {
+      const [id, data] = entries.shift();
+      delete G.stash[id];
+      toast('🧹 仓库满了！丢弃了 '+ (getItem(id)?.name || id), 'error');
+    }
+  }
+}
+
+function sellItem(itemId, qty=1) {
+  const item = getItem(itemId);
+  if (!item) return 0;
+  if (!removeFromStash(itemId, qty)) return 0;
+  const sellPrice = Math.floor(item.val * 0.6);
+  G.money += sellPrice * qty;
+  return sellPrice * qty;
+}
+
+function equipItem(itemId) {
+  const item = getItem(itemId);
+  if (!item) return false;
+  if (!removeFromStash(itemId, 1)) return false;
+
+  // Unequip existing in slot
+  if (item.type === 'weapon') {
+    if (G.equipped.weapon) addToStash(G.equipped.weapon, 1);
+    G.equipped.weapon = itemId;
+  } else if (item.type === 'armor') {
+    // Determine if vest or helmet
+    if (item.zones.includes('head')) {
+      const oldHelmet = G.equipped.armor.find(id => id && getItem(id)?.zones?.includes('head'));
+      if (oldHelmet) { G.equipped.armor = G.equipped.armor.filter(id=>id!==oldHelmet); addToStash(oldHelmet,1); }
+      G.equipped.armor.push(itemId);
+    } else {
+      const oldVest = G.equipped.armor.find(id => id && !getItem(id)?.zones?.includes('head'));
+      if (oldVest) { G.equipped.armor = G.equipped.armor.filter(id=>id!==oldVest); addToStash(oldVest,1); }
+      G.equipped.armor.push(itemId);
+    }
+  } else if (item.type === 'backpack') {
+    if (G.equipped.backpack) addToStash(G.equipped.backpack, 1);
+    G.equipped.backpack = itemId;
+  } else if (item.type === 'rig') {
+    if (G.equipped.rig) addToStash(G.equipped.rig, 1);
+    G.equipped.rig = itemId;
+  } else {
+    addToStash(itemId, 1); // Can't equip this
+    return false;
+  }
+  return true;
+}
+
+function unequipItem(slot) {
+  if (slot === 'weapon' && G.equipped.weapon) {
+    addToStash(G.equipped.weapon, 1);
+    G.equipped.weapon = null;
+  } else if (slot === 'backpack' && G.equipped.backpack) {
+    addToStash(G.equipped.backpack, 1);
+    G.equipped.backpack = null;
+  } else if (slot === 'rig' && G.equipped.rig) {
+    addToStash(G.equipped.rig, 1);
+    G.equipped.rig = null;
+  }
+}
+
+function buyFromTrader(traderId, itemId) {
+  const trader = TRADERS[traderId];
+  const tState = G.traders[traderId];
+  if (!trader) return;
+
+  // Check if trader has this item at current level
+  let found = false;
+  for (const cat of Object.values(trader.stock)) {
+    if (cat.includes(itemId)) { found = true; break; }
+  }
+  if (!found) { toast('此商人当前不出售该物品', 'error'); return; }
+
+  const item = getItem(itemId);
+  const price = Math.floor(item.val * 1.3);
+
+  if (G.money < price) { toast('💰 资金不足！', 'error'); return; }
+
+  G.money -= price;
+  tState.spend += price;
+  addToStash(itemId, 1);
+
+  // Notify if can level up
+  if (tState.level < trader.maxLevel) {
+    const nextCost = trader.levelUpCosts[tState.level];
+    const nextSpend = trader.levelUpSpendReqs[tState.level];
+    if (tState.spend >= nextSpend && G.money >= nextCost) {
+      toast('💡 ' + trader.name + ' 可以升级了！', 'info');
+    }
+  }
+
+  renderAll();
+  saveGame();
+}
+
+function levelUpTrader(traderId) {
+  const trader = TRADERS[traderId];
+  const tState = G.traders[traderId];
+  if (!trader || tState.level >= trader.maxLevel) return;
+  const nextCost = trader.levelUpCosts[tState.level];
+  const nextSpend = trader.levelUpSpendReqs[tState.level];
+  if (tState.spend < nextSpend || G.money < nextCost) {
+    toast('条件不满足！', 'error'); return;
+  }
+  G.money -= nextCost;
+  tState.level++;
+  updateTraderStock(traderId, tState.level);
+  toast('⬆️ ' + trader.name + ' 升级到 Lv.' + tState.level + '！', 'success');
+  renderAll();
+  saveGame();
+}
+
+function updateTraderStock(traderId, level) {
+  const trader = TRADERS[traderId];
+  if (level >= 2 && traderId === 'peacekeeper') {
+    trader.stock.weapon.push('dmr');
+    trader.stock.ammo.push('ammo_762');
+    trader.stock.armor.push('vest_t3');
+    trader.stock.backpack.push('bp_scav');
+  }
+  if (level >= 3 && traderId === 'peacekeeper') {
+    trader.stock.weapon.push('sniper');
+    trader.stock.armor.push('vest_t5','helmet_l5');
+    trader.stock.backpack.push('bp_combat');
+  }
+  if (level >= 2 && traderId === 'prapor') {
+    trader.stock.weapon.push('shotgun');
+    trader.stock.ammo.push('ammo_12g');
+    trader.stock.rig.push('rig_l3');
+  }
+  if (level >= 3 && traderId === 'prapor') {
+    trader.stock.armor.push('vest_t5','helmet_l5');
+    trader.stock.backpack.push('bp_assault');
+  }
+  if (level >= 2 && traderId === 'therapist') {
+    trader.stock.medical.push('surgery');
+  }
+  if (level >= 3 && traderId === 'therapist') {
+    trader.stock.container.push('ammo_case');
+  }
+}
+
+// ─── HIDEOUT ──────────────────────────────────────────────────
+
+function upgradeHideout(moduleId) {
+  const modDef = HIDEOUT_MODULES[moduleId];
+  if (!modDef) return;
+  const currentLv = G.hideout[moduleId];
+  if (currentLv >= modDef.levels.length) {
+    toast('已达到最高等级！', 'info'); return;
+  }
+  const cost = modDef.levels[currentLv].cost;
+  // Check materials
+  for (const [matId, needed] of Object.entries(cost)) {
+    const have = G.stash[matId]?.qty || 0;
+    if (have < needed) {
+      toast('缺少材料：' + (getItem(matId)?.name || matId) + ' x'+needed, 'error');
+      return;
+    }
+  }
+  // Deduct materials
+  for (const [matId, needed] of Object.entries(cost)) {
+    G.stash[matId].qty -= needed;
+    if (G.stash[matId].qty <= 0) delete G.stash[matId];
+  }
+  G.hideout[moduleId]++;
+  toast('✅ ' + modDef.name + ' 升级到 Lv.' + G.hideout[moduleId] + '！', 'success');
+  renderAll();
+  saveGame();
+}
+
+// ─── AD REWARD ────────────────────────────────────────────────
+
+function watchAd() {
+  const now = Date.now();
+  if (now < G.adWatchCooldown) {
+    const remaining = Math.ceil((G.adWatchCooldown - now)/60000);
+    toast('⏰ 广告冷却中，'+remaining+'分钟后可再次观看', 'error');
+    return;
+  }
+  // Simulate ad watch
+  const reward = 500 + G.level * 200 + rand(0, 500);
+  G.money += reward;
+  G.adWatchCooldown = now + 5*60*1000; // 5 min cooldown
+  // 10% chance for item reward
+  if (Math.random() < 0.1) {
+    const bonusLoot = pick(['bandage','ai2','crackers','energy_drink','ammo_9mm','scrap','wire']);
+    addToStash(bonusLoot, rand(1,3));
+    toast('📺 看完广告！获得 ¥'+fmtMoney(reward)+' + 额外奖励！', 'success');
+  } else {
+    toast('📺 看完广告！获得 ¥'+fmtMoney(reward), 'success');
+  }
+  renderAll();
+  saveGame();
+}
+
+// ─── SAVE / LOAD ──────────────────────────────────────────────
+
+function saveGame() {
+  const g = JSON.parse(JSON.stringify(G));
+  delete g.currentRaid; // don't save mid-raid
+  localStorage.setItem('tarkov-lite-save', JSON.stringify(g));
+}
+
+function loadGame() {
+  const raw = localStorage.getItem('tarkov-lite-save');
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    G = { ...JSON.parse(JSON.stringify(DEFAULT_STATE)), ...data };
+    G.currentRaid = null;
+    return true;
+  } catch(e) { return false; }
+}
+
+function exportSave() {
+  const g = JSON.parse(JSON.stringify(G));
+  delete g.currentRaid;
+  const blob = new Blob([JSON.stringify(g, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tarkov-lite-save-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📤 存档已导出！', 'success');
+}
+
+function importSave() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        // Basic validation
+        if (typeof data.money !== 'number' || typeof data.level !== 'number') {
+          toast('❌ 无效的存档文件', 'error'); return;
+        }
+        G = { ...JSON.parse(JSON.stringify(DEFAULT_STATE)), ...data };
+        G.currentRaid = null;
+        saveGame();
+        renderAll();
+        toast('📥 存档导入成功！', 'success');
+      } catch(e) {
+        toast('❌ 存档文件损坏', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function resetGame() {
+  if (!confirm('确定要重置所有进度吗？此操作不可撤销！')) return;
+  G = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  localStorage.removeItem('tarkov-lite-save');
+  renderAll();
+  toast('🔄 游戏已重置', 'info');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────
+
+let currentScreen = '';
+
+function setScreen(name) {
+  currentScreen = name;
+  $$('.screen').forEach(el => el.classList.remove('active'));
+  const el = $('#screen-'+name);
+  if (el) el.classList.add('active');
+}
+
+function renderAll() {
+  if (G.currentRaid) {
+    renderRaid();
+    setScreen('raid');
+  } else {
+    renderMain();
+    setScreen('main');
+  }
+}
+
+function renderMain() {
+  // Build main screen if not exists
+  let el = $('#screen-main');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-main';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  const wepName = G.equipped.weapon ? getItem(G.equipped.weapon)?.name || '无' : '✋ 空手';
+  const bpName = G.equipped.backpack ? getItem(G.equipped.backpack)?.name || '挎包' : '🎒 挎包(4格)';
+  const armorNames = G.equipped.armor.map(id => getItem(id)?.name || '无').join(', ') || '无护甲';
+
+  const thoraxHp = G.bodyHp.thorax;
+  const headHp = G.bodyHp.head;
+  const thoraxPct = thoraxHp / G.bodyMaxHp.thorax * 100;
+  const headPct = headHp / G.bodyMaxHp.head * 100;
+
+  let hpClass = thoraxPct > 60 ? 'hp-healthy' : thoraxPct > 30 ? 'hp-warning' : 'hp-danger';
+
+  const totalHp = Object.values(G.bodyHp).reduce((a,b)=>a+b,0);
+  const totalMax = Object.values(G.bodyMaxHp).reduce((a,b)=>a+b,0);
+
+  const now = Date.now();
+  const adReady = now >= G.adWatchCooldown;
+
+  const hasRaid = !!G.currentRaid;
+
+  let html = '';
+
+  html +=
+    // Resource bar
+    '<div class="res-bar">' +
+      '<div class="res-item">💰 <span class="highlight">¥'+fmtMoney(G.money)+'</span></div>' +
+      '<div class="res-item">⭐ Lv.'+G.level+' <span class="text-dim">('+G.xp+'/'+xpForLevel(G.level)+')</span></div>' +
+      '<div class="res-item">❤️ '+totalHp+'/'+totalMax+'</div>' +
+      '<div class="res-item" style="color:'+(G.energy<20?'var(--red)':G.energy<50?'var(--orange)':'var(--mint)')+'">⚡ '+G.energy+'</div>' +
+      '<div class="res-item" style="color:'+(G.hydration<20?'var(--red)':G.hydration<50?'var(--orange)':'var(--blue)')+'">💧 '+G.hydration+'</div>' +
+      '<div class="res-item">💀 '+G.stats.raids+'局 | 🏆'+G.stats.survived+'次</div>' +
+    '</div>' +
+
+    // HP bars — click a damaged part to heal from stash
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">❤️</span><h3>身体状况</h3>' +
+      '<span style="font-size:10px;color:var(--text-dim);margin-left:8px;">（点击受伤部位使用仓库药品治疗）</span></div>' +
+      BODY_PARTS.map(p => {
+        const pct = G.bodyHp[p] / G.bodyMaxHp[p] * 100;
+        const cls = G.bodyHp[p] <= 0 ? 'hp-danger' : pct > 60 ? 'hp-healthy' : pct > 30 ? 'hp-warning' : 'hp-danger';
+        const needHeal = G.bodyHp[p] < G.bodyMaxHp[p];
+        const cursor = needHeal ? 'cursor:pointer;' : '';
+        const onClick = needHeal ? 'onclick="showOutOfRaidHeal(\''+p+'\')"' : '';
+        return '<div style="margin:4px 0;display:flex;align-items:center;gap:8px;'+cursor+'" '+onClick+'>' +
+          '<span style="font-size:12px;min-width:56px;">'+BODY_NAMES[p]+'</span>' +
+          '<div class="hp-bar-outer"><div class="hp-bar-inner '+cls+'" style="width:'+Math.max(0,pct)+'%"></div></div>' +
+          '<span style="font-size:11px;min-width:36px;">'+G.bodyHp[p]+'/'+G.bodyMaxHp[p]+'</span>' +
+          (needHeal ? '<span style="font-size:10px;color:var(--pink);">[治疗]</span>' : '<span style="font-size:10px;color:var(--mint);">✅</span>') +
+          '</div>';
+      }).join('') +
+      (totalHp < totalMax ? '<button class="btn btn-sm btn-success btn-block" style="margin-top:8px;" onclick="healAllOutOfRaid()">💊 批量治疗（使用仓库药品）</button>' : '') +
+    '</div>' +
+
+    // Food/energy card (out-of-raid)
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">🍞</span><h3>体力与水分</h3></div>' +
+      '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:120px;">' +
+          '<div style="font-size:11px;color:var(--text-dim);">⚡ 体力</div>' +
+          '<div class="hp-bar-outer"><div class="hp-bar-inner '+(G.energy>60?'hp-healthy':G.energy>30?'hp-warning':'hp-danger')+'" style="width:'+G.energy+'%"></div></div>' +
+          '<div style="font-size:10px;">'+G.energy+'/100</div>' +
+        '</div>' +
+        '<div style="flex:1;min-width:120px;">' +
+          '<div style="font-size:11px;color:var(--text-dim);">💧 水分</div>' +
+          '<div class="hp-bar-outer"><div class="hp-bar-inner '+(G.hydration>60?'hp-healthy':G.hydration>30?'hp-warning':'hp-danger')+'" style="width:'+G.hydration+'%"></div></div>' +
+          '<div style="font-size:10px;">'+G.hydration+'/100</div>' +
+        '</div>' +
+        '<button class="btn btn-sm btn-warning" onclick="showOutOfRaidEat()">🍞 吃食物</button>' +
+      '</div>' +
+    '</div>' +
+
+    // Equipment summary
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">🎖️</span><h3>当前装备</h3></div>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;">' +
+        '<div>🔫 武器：<b>'+wepName+'</b></div>' +
+        '<div>🛡️ 护甲：<b>'+armorNames+'</b></div>' +
+        '<div>🎒 背包：<b>'+bpName+'</b>('+totalCarrySlots()+'格)</div>' +
+      '</div>' +
+    '</div>' +
+
+    // Maps
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">🗺️</span><h3>选择地图出击</h3></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        Object.entries(MAPS).map(([id,m]) => {
+          const locked = G.level < m.minLevel;
+          let fee = m.entryFee;
+          const feeRed = hideoutEffect('feeReduction') / 100;
+          fee = Math.floor(fee * (1-feeRed));
+          const canAfford = G.money >= fee;
+          return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);padding:10px 14px;border-radius:8px;'+(locked?'opacity:0.4':'')+'">' +
+            '<div>' +
+              '<div style="font-weight:700;">'+m.name+' <span style="font-size:10px;color:'+rarityColor('common')+'">'+m.size+'×'+m.size+'</span></div>' +
+              '<div style="font-size:11px;color:var(--text-dim)">'+m.desc+' '+('⭐'.repeat(m.difficulty))+'</div>' +
+            '</div>' +
+            '<div style="text-align:right;">' +
+              '<div style="font-size:11px;color:var(--gold)">入场费：¥'+fmtMoney(fee)+'</div>' +
+              (locked
+                ? '<div style="font-size:10px;color:var(--red)">需要 Lv.'+m.minLevel+'</div>'
+                : '<button class="btn btn-sm btn-primary" onclick="startRaid(\''+id+'\')" '+(canAfford?'':'disabled')+'>出击 ▶</button>'
+              ) +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>' +
+
+    // Ad button
+    '<div class="card" style="text-align:center;">' +
+      (adReady
+        ? '<button class="btn btn-gold btn-block ad-btn btn-lg" onclick="watchAd()">📺 看广告获得 ¥' + fmtMoney(500 + G.level*200) + ' ~ ' + fmtMoney(1000 + G.level*200) + '</button>'
+        : '<div style="font-size:12px;color:var(--text-dim)">⏰ 广告冷却中，请稍后再来</div>'
+      ) +
+    '</div>' +
+
+    // Nav tabs
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderStash();setScreen(\'stash\')">📦 仓库</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderSecureInfo();setScreen(\'secure\')">🔒 保险箱</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderTasks();setScreen(\'tasks\')">📋 任务</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderTraders();setScreen(\'traders\')">🏪 商人</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderHideout();setScreen(\'hideout\')">🏠 藏身处</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderMarket();setScreen(\'market\')">💹 跳蚤市场</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="exportSave()">📤 导出</button>' +
+      '<button class="btn btn-sm btn-secondary" onclick="importSave()">📥 导入</button>' +
+      '<button class="btn btn-sm btn-danger" onclick="resetGame()">🔄 重置</button>' +
+    '</div>';
+
+  el.innerHTML = html;
+}
+
+function renderRaid() {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const mapDef = MAPS[raid.mapId];
+  const size = raid.size;
+
+  let el = $('#screen-raid');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-raid';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  const curCarry = Object.values(raid.carried).reduce((s,q)=>s+q, 0);
+  const capacity = totalCarrySlots();
+
+  // Find adjacent cells
+  const adj = [];
+  for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+    const nr = raid.playerR+dr, nc = raid.playerC+dc;
+    if (nr >= 0 && nr < size && nc >= 0 && nc < size) adj.push([nr,nc]);
+  }
+
+  const cellSize = Math.min(56, Math.floor(500/size));
+
+  let html =
+    '<div class="res-bar">' +
+      '<div class="res-item">💰 ¥'+fmtMoney(G.money)+'</div>' +
+      '<div class="res-item">⏱️ '+raid.turnsLeft+'/'+raid.totalTurns+' 回合</div>' +
+      '<div class="res-item">🎒 '+curCarry+'/'+capacity+' 格</div>' +
+      '<div class="res-item">❤️ '+Object.values(G.bodyHp).reduce((a,b)=>a+b,0)+' HP</div>' +
+      '<div class="res-item" style="color:'+(G.energy<20?'var(--red)':G.energy<50?'var(--orange)':'var(--mint)')+'">⚡ '+G.energy+' 体力</div>' +
+      '<div class="res-item" style="color:'+(G.hydration<20?'var(--red)':G.hydration<50?'var(--orange)':'var(--blue)')+'">💧 '+G.hydration+' 水分</div>' +
+    '</div>' +
+
+    '<div class="card" style="text-align:center;">' +
+      '<h3 style="margin-bottom:8px;">'+mapDef.name+'</h3>' +
+      '<div class="map-container">' +
+        '<div class="map-grid" style="grid-template-columns:repeat('+size+','+cellSize+'px);justify-content:center;">';
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const cell = raid.cells[r][c];
+      const isPlayer = r === raid.playerR && c === raid.playerC;
+      const isAdj = !isPlayer && adj.some(([ar,ac])=>ar===r&&ac===c);
+
+      // Show icons based on type
+      let cls = 'map-cell ';
+      let icon = '';
+      const hvzR = Math.floor(size/2);
+              const hvzC = Math.floor(size/2);
+
+      // Compute HVZ before rendering so we can show it on unexplored cells too
+      const isHVZ = Math.abs(r-hvzR)<=1 && Math.abs(c-hvzC)<=1;
+
+      if (isPlayer) {
+        cls += 'player';
+        icon = '🧑';
+      } else if (!cell.explored) {
+        // High-value zone is visible even when unexplored
+        if (isHVZ) { cls += 'unexplored hvz'; icon = '💎'; }
+        else { cls += 'unexplored'; icon = '❓'; }
+      } else {
+        switch(cell.type) {
+          case 'empty': cls += 'empty'; icon = isHVZ ? '💎' : '·'; break;
+          case 'loot': cls += 'loot'; icon = isHVZ ? '✨' : '📦'; break;
+          case 'enemy': cls += 'enemy'; icon = '👤'; break;
+          case 'boss': cls += 'boss'; icon = '👹'; break;
+          case 'extract': cls += 'extract'; icon = '🚁'; break;
+          case 'hazard': cls += 'hazard'; icon = '☣️'; break;
+          case 'locked': cls += 'locked'; icon = isHVZ ? '🔐' : '🔒'; break;
+          default: cls += 'empty'; icon = '·';
+        }
+        if (isHVZ) cls += ' hvz';
+      }
+
+      if (isAdj && !isPlayer) cls += ' adjacent';
+
+      // Show loot count on explored loot cells (including player's cell)
+      let badge = '';
+      if (cell.explored && cell.loot && cell.loot.length > 0) {
+        badge = '<span style="font-size:8px;color:var(--gold);position:absolute;top:1px;right:2px;">'+cell.loot.length+'</span>';
+      }
+
+      const onClick = isAdj ? 'onclick="moveTo('+r+','+c+')"' :
+        (isPlayer && cell.loot && cell.loot.length > 0 ? 'onclick="showLootPickupUI('+r+','+c+')"' : '');
+
+      html += '<div class="'+cls+'" style="width:'+cellSize+'px;height:'+cellSize+'px" '+onClick+'>' +
+        '<span class="cell-icon">'+icon+'</span>' +
+        badge +
+        '</div>';
+    }
+  }
+
+  html += '</div></div>' +
+    '<div class="map-legend" style="justify-content:center;">' +
+      '<span>🧑 你</span><span>❓ 未探</span><span>📦 物资</span><span>👤 敌人</span><span>👹 Boss</span>' +
+      '<span>🚁 撤离点</span><span>☣️ 危险</span><span>🔒 锁</span><span style="color:#c084fc">💎 高价值区</span>' +
+    '</div>' +
+    '</div>' +
+
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">🎒</span><h3>已携带物品 ('+curCarry+'/'+capacity+')</h3></div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+
+  for (const [itemId, qty] of Object.entries(raid.carried)) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    html += '<div style="background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;font-size:11px;">' +
+      item.name + ' x' + qty +
+      ' <span style="font-size:9px;color:'+rarityColor(item.rarity)+'">['+rarityName(item.rarity)+']</span>' +
+      '</div>';
+  }
+  if (Object.keys(raid.carried).length === 0) {
+    html += '<span class="text-dim">空空如也，快去搜刮吧！</span>';
+  }
+
+  // Show body HP status during raid
+  html += '<div class="card" style="margin-top:8px;">' +
+    '<div class="card-header"><span class="icon">❤️</span><h3>身体状况</h3></div>' +
+    BODY_PARTS.map(p => {
+      const pct = G.bodyHp[p] / G.bodyMaxHp[p] * 100;
+      const cls = G.bodyHp[p] <= 0 ? 'hp-danger' : pct > 60 ? 'hp-healthy' : pct > 30 ? 'hp-warning' : 'hp-danger';
+      return '<div style="margin:2px 0;display:flex;align-items:center;gap:6px;font-size:11px;">' +
+        '<span style="min-width:50px;">'+BODY_NAMES[p]+'</span>' +
+        '<div class="hp-bar-outer" style="flex:1;"><div class="hp-bar-inner '+cls+'" style="width:'+Math.max(0,pct)+'%"></div></div>' +
+        '<span style="min-width:32px;">'+G.bodyHp[p]+'</span>' +
+        '</div>';
+    }).join('') +
+    '</div>';
+
+  // Check if current cell has loot (for re-search button)
+  var curCell = raid.cells[raid.playerR][raid.playerC];
+  var curHasLoot = curCell && curCell.loot && curCell.loot.length > 0;
+
+  html += '</div></div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+      (curHasLoot ? '<button class="btn btn-sm btn-gold" style="flex:1;" onclick="showLootPickupUI('+raid.playerR+','+raid.playerC+')">🔍 搜索脚下 ('+curCell.loot.length+'件)</button>' : '') +
+      '<button class="btn btn-warning btn-block" onclick="showDiscardUI()">🗑️ 丢弃物品</button>' +
+      '<button class="btn btn-sm btn-gold" onclick="putInSecureContainer()">🔒 存入保险箱</button>' +
+      '<button class="btn btn-sm btn-success" onclick="showHealUI()">💊 使用医疗品</button>' +
+    '</div>' +
+    '<button class="btn btn-secondary btn-block" onclick="confirmEarlyExtract()" style="margin-top:8px;">🏳️ 提前撤退（放弃物资）</button>';
+
+  el.innerHTML = html;
+}
+
+function renderStash() {
+  let el = $('#screen-stash');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-stash';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  const limit = 20 + (hideoutEffect('stashSlots') || 0);
+  const used = stashCount();
+
+  let html = '';
+
+  html +=
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">📦</span><h3>仓库 ('+used+'/'+limit+')</h3>' +
+      '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-left:auto;">← 返回</button></div>' +
+      '<div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn btn-sm btn-warning" onclick="sellAllItems()">💰 一键出售全部</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="sellAllCommonItems()">🗑️ 出售所有普通/精良</button>' +
+        '<span style="font-size:10px;color:var(--text-dim);margin-left:4px;">总估值: ¥' + fmtMoney(Object.entries(G.stash).reduce(function(s,idq){var it=getItem(idq[0]);return s+(it?it.val*(idq[1].qty||0):0);},0)*0.6) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">';
+
+  const entries = Object.entries(G.stash).sort((a,b) => {
+    const ia = getItem(a[0]), ib = getItem(b[0]);
+    if (!ia||!ib) return 0;
+    const rarityOrder = ['legendary','epic','rare','uncommon','common'];
+    return rarityOrder.indexOf(ia.rarity) - rarityOrder.indexOf(ib.rarity);
+  });
+
+  for (const [itemId, data] of entries) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;border-left:3px solid '+rarityColor(item.rarity)+'">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="color:'+rarityColor(item.rarity)+';font-size:11px">['+rarityName(item.rarity)+']</span>' +
+        '<span>'+item.name+'</span>' +
+        '<span style="font-size:10px;color:var(--text-dim)">x'+data.qty+'</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<span style="font-size:10px;color:var(--gold)">¥'+fmtMoney(item.val)+'</span>';
+
+    // Equip-able (stays on stash screen)
+    if (['weapon','armor','backpack','rig'].includes(item.type)) {
+      html += '<button class="btn btn-sm btn-primary" onclick="equipItem(\''+itemId+'\');renderStash();">装备</button>';
+    }
+
+    // Sell buttons — stays on stash view
+    var sellOnePrice = Math.floor(item.val * 0.6);
+    var sellAllPrice = Math.floor(item.val * 0.6 * data.qty);
+    html += '<button class="btn btn-sm btn-warning" onclick="sellItem(\''+itemId+'\',1);renderStash();">卖1 ¥'+fmtMoney(sellOnePrice)+'</button>';
+    if (data.qty > 1) {
+      html += '<button class="btn btn-sm btn-warning" onclick="sellItem(\''+itemId+'\','+data.qty+');renderStash();">全卖 ¥'+fmtMoney(sellAllPrice)+'</button>';
+    }
+      '</div></div>';
+  }
+
+  if (entries.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:var(--text-dim)">仓库空空如也，快去出击搜刮吧！</div>';
+  }
+
+  html += '</div></div></div>';
+  el.innerHTML = html;
+}
+
+// ─── BULK SELL ────────────────────────────────────────────────
+
+function sellAllItems() {
+  const entries = Object.entries(G.stash);
+  if (entries.length === 0) { toast('仓库是空的！', 'error'); return; }
+  var total = 0;
+  var count = 0;
+  for (const [itemId, data] of entries) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    const qty = data.qty;
+    total += Math.floor(item.val * 0.6 * qty);
+    count += qty;
+    delete G.stash[itemId];
+  }
+  G.money += total;
+  toast('💰 出售了 ' + count + ' 件物品，获得 ¥' + fmtMoney(total) + '！', 'success');
+  renderStash();
+  saveGame();
+}
+
+function sellAllCommonItems() {
+  var total = 0;
+  var count = 0;
+  for (const [itemId, data] of Object.entries(G.stash)) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    if (item.rarity === 'common' || item.rarity === 'uncommon') {
+      total += Math.floor(item.val * 0.6 * data.qty);
+      count += data.qty;
+      delete G.stash[itemId];
+    }
+  }
+  if (count === 0) { toast('没有普通/精良物品可出售！', 'error'); return; }
+  G.money += total;
+  toast('🗑️ 出售了 ' + count + ' 件普通/精良物品，获得 ¥' + fmtMoney(total) + '！', 'success');
+  renderStash();
+  saveGame();
+}
+
+function renderTraders() {
+  let el = $('#screen-traders');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-traders';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  let html = '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-bottom:10px;">← 返回</button>';
+
+  for (const [traderId, trader] of Object.entries(TRADERS)) {
+    const tState = G.traders[traderId];
+    html += '<div class="card">' +
+      '<div class="card-header">' +
+        '<span class="icon">'+trader.name.split(' ')[1]+'</span>' +
+        '<h3>'+trader.name+' <span style="font-size:11px;">Lv.'+tState.level+'</span></h3>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">'+trader.desc+'</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+
+    const allItems = [];
+    for (const cat of Object.values(trader.stock)) {
+      allItems.push(...cat);
+    }
+
+    for (const itemId of allItems) {
+      const item = getItem(itemId);
+      if (!item) continue;
+      const price = Math.floor(item.val * 1.3);
+      html += '<div style="background:rgba(255,255,255,0.04);padding:6px 10px;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px;border-left:2px solid '+rarityColor(item.rarity)+'">' +
+        item.name +
+        ' <span style="color:var(--gold)">¥'+fmtMoney(price)+'</span>' +
+        '<button class="btn btn-sm btn-primary" onclick="buyFromTrader(\''+traderId+'\',\''+itemId+'\')">购买</button>' +
+        '</div>';
+    }
+
+    // Level up button
+    if (tState.level < trader.maxLevel) {
+      const nextCost = trader.levelUpCosts[tState.level];
+      const nextSpend = trader.levelUpSpendReqs[tState.level];
+      const canUp = tState.spend >= nextSpend && G.money >= nextCost;
+      html += '<div style="width:100%;margin-top:8px;font-size:11px;'+(canUp?'':'color:var(--text-dim);')+'">' +
+        '⬆️ 升级需要：消费 ¥'+fmtMoney(nextSpend)+' (已 ¥'+fmtMoney(tState.spend)+') + 手续费 ¥'+fmtMoney(nextCost)+' ' +
+        '<button class="btn btn-sm btn-success" onclick="levelUpTrader(\''+traderId+'\')" '+(canUp?'':'disabled')+'>升级</button>' +
+        '</div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderHideout() {
+  let el = $('#screen-hideout');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-hideout';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  let html = '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-bottom:10px;">← 返回</button>';
+
+  for (const [modId, modDef] of Object.entries(HIDEOUT_MODULES)) {
+    const currentLv = G.hideout[modId];
+    const maxLv = modDef.levels.length;
+    html += '<div class="card">' +
+      '<div class="card-header"><span class="icon">'+modDef.name.split(' ')[0]+'</span><h3>'+modDef.name+' <span style="font-size:11px;">Lv.'+currentLv+'/'+maxLv+'</span></h3></div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">'+modDef.desc+'</div>';
+
+    if (currentLv > 0) {
+      const effect = modDef.levels[currentLv-1].effect;
+      html += '<div style="font-size:11px;color:var(--mint);margin-bottom:6px;">当前效果：' +
+        Object.entries(effect).map(([k,v]) => {
+          const labels = {
+            hideoutPower: '电力+'+v,
+            repairBonus: '修理加成+'+v+'%',
+            craft: '制作等级：'+v,
+            healAfterRaid: '战后回复+'+v+'HP',
+            feeReduction: '入场费减免'+v+'%',
+            dropBonus: '稀有掉落+'+v+'%',
+            stashSlots: '仓库容量+'+v+'格',
+          };
+          return labels[k] || k+':'+v;
+        }).join(', ') +
+        '</div>';
+    }
+
+    if (currentLv < maxLv) {
+      const cost = modDef.levels[currentLv].cost;
+      html += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">升级所需：' +
+        Object.entries(cost).map(([mat, n]) => {
+          const item = getItem(mat);
+          const have = G.stash[mat]?.qty || 0;
+          return (item?.name||mat)+' x'+n+' ('+(have>=n?'✅':'❌'+have+'/')+n+')';
+        }).join(' | ') +
+        '</div>' +
+        '<button class="btn btn-sm btn-primary" onclick="upgradeHideout(\''+modId+'\')">升级</button>';
+    } else {
+      html += '<span style="font-size:11px;color:var(--mint)">✅ 已满级</span>';
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderMarket() {
+  let el = $('#screen-market');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-market';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  let html =
+    '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-bottom:10px;">← 返回</button>' +
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">💹</span><h3>跳蚤市场</h3>' +
+      '<button class="btn btn-sm btn-warning" onclick="sellAllOnMarket()" style="margin-left:auto;">💰 一键出售全部</button></div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">这里可以快速出售物品，价格随市场波动（80%~120%基础价值）</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">';
+
+  const entries = Object.entries(G.stash).sort((a,b) => {
+    const ia = getItem(a[0]), ib = getItem(b[0]);
+    if (!ia||!ib) return 0;
+    return ib.val - ia.val;
+  });
+
+  for (const [itemId, data] of entries) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    // Skip equipped-type items in flea (can't sell equipped)
+    // Stable market price: deterministic based on item id (avoids re-roll on each render)
+    const marketMult = 0.8 + ((itemId.split('').reduce((h,c)=>h+c.charCodeAt(0),0) % 41) / 100);
+    const price = Math.floor(item.val * marketMult);
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);padding:6px 10px;border-radius:6px;">' +
+      '<span style="font-size:12px;">'+item.name+' x'+data.qty+'</span>' +
+      '<span style="font-size:11px;color:var(--gold)">市场价 ¥'+fmtMoney(price)+'/个</span>' +
+      '<button class="btn btn-sm btn-warning" onclick="sellOnMarket(\''+itemId+'\',1,'+price+');">卖1</button>' +
+      (data.qty > 1 ? '<button class="btn btn-sm btn-warning" onclick="sellOnMarket(\''+itemId+'\','+data.qty+','+price*data.qty+');">全卖 ¥'+fmtMoney(price*data.qty)+'</button>' : '') +
+      '</div>';
+  }
+
+  if (entries.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:var(--text-dim)">仓库里没有可出售的物品</div>';
+  }
+
+  html += '</div></div></div>';
+  el.innerHTML = html;
+}
+
+// ─── MARKET HELPERS ────────────────────────────────────────────
+
+function marketPrice(itemId) {
+  const item = getItem(itemId);
+  if (!item) return 0;
+  var marketMult = 0.8 + ((itemId.split('').reduce(function(h,c){return h+c.charCodeAt(0);},0) % 41) / 100);
+  return Math.floor(item.val * marketMult);
+}
+
+function sellOnMarket(itemId, qty, total) {
+  if (!removeFromStash(itemId, qty)) { toast('物品不足！', 'error'); return; }
+  G.money += total;
+  toast('💹 市场出售 ' + (getItem(itemId)?.name||itemId) + ' x'+qty + ' 获得 ¥'+fmtMoney(total), 'success');
+  renderMarket();
+  saveGame();
+}
+
+function sellAllOnMarket() {
+  var total = 0, count = 0;
+  for (var itemId of Object.keys(G.stash)) {
+    var data = G.stash[itemId];
+    if (!data) continue;
+    var qty = data.qty || 0;
+    total += marketPrice(itemId) * qty;
+    count += qty;
+    delete G.stash[itemId];
+  }
+  if (count === 0) { toast('仓库是空的！', 'error'); return; }
+  G.money += total;
+  toast('💹 跳蚤市场出售全部 ' + count + ' 件，获得 ¥'+fmtMoney(total), 'success');
+  renderMarket();
+  saveGame();
+}
+
+function renderCombatOverlay() {
+  const raid = G.currentRaid;
+  if (!raid?.currentEnemy) return;
+  const enemy = raid.currentEnemy;
+
+  let existing = $('#combat-overlay');
+  if (existing) existing.remove();
+
+  const html = '<div id="combat-overlay" class="combat-overlay">' +
+    '<div class="combat-panel">' +
+      '<div class="combat-enemy">' +
+        '<div class="sprite">'+(enemy.isBoss ? '👹' : '👤')+'</div>' +
+        '<div class="name">'+enemy.name+'</div>' +
+        '<div class="hp-bar"><div class="hp-fill" style="width:'+(enemy.hp/enemy.maxHp*100)+'%"></div></div>' +
+        '<div style="font-size:11px;color:var(--text-dim)">HP '+enemy.hp+'/'+enemy.maxHp+'</div>' +
+      '</div>' +
+      '<div class="combat-player-status">' +
+        BODY_PARTS.map(p => {
+          const pct = G.bodyHp[p] / G.bodyMaxHp[p] * 100;
+          const cls = G.bodyHp[p] <= 0 ? 'damaged' : '';
+          return '<div class="body-part '+cls+'" onclick="playerAttack(\''+p+'\')">' +
+            '<div class="part-name">'+BODY_NAMES[p]+'</div>' +
+            '<div class="part-hp">'+G.bodyHp[p]+'/'+G.bodyMaxHp[p]+'</div>' +
+            '</div>';
+        }).join('') +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--text-dim);text-align:center;margin-bottom:6px;">⬆️ 点击身体部位瞄准攻击 ⬆️</div>' +
+      '<div class="combat-actions">' +
+        '<button class="btn btn-danger" onclick="fleeCombat()">🏃 逃跑</button>' +
+      '</div>' +
+      '<div id="combat-log" class="combat-log"></div>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function renderCombatStatus() {
+  const raid = G.currentRaid;
+  if (!raid?.currentEnemy) return;
+  const enemy = raid.currentEnemy;
+  const hpFill = document.querySelector('#combat-overlay .hp-fill');
+  const enemyInfo = document.querySelector('#combat-overlay .combat-enemy > div:last-child');
+  if (hpFill) hpFill.style.width = Math.max(0, enemy.hp/enemy.maxHp*100)+'%';
+  if (enemyInfo) enemyInfo.textContent = 'HP '+Math.max(0,enemy.hp)+'/'+enemy.maxHp;
+  const partEls = document.querySelectorAll('#combat-overlay .part-hp');
+  partEls.forEach((el, i) => {
+    if (BODY_PARTS[i]) {
+      const p = BODY_PARTS[i];
+      el.textContent = G.bodyHp[p]+'/'+G.bodyMaxHp[p]+'';
+      const partDiv = el.closest('.body-part');
+      if (partDiv) {
+        if (G.bodyHp[p] <= 0) partDiv.classList.add('damaged');
+        else partDiv.classList.remove('damaged');
+      }
+    }
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+
+function init() {
+  if (loadGame()) {
+    toast('📂 存档已加载！欢迎回来~', 'info');
+  } else {
+    toast('🆕 新冒险开始！', 'info');
+  }
+  renderAll();
+}
+
+// ─── MIA / EARLY EXTRACT DIALOGS ──────────────────────────────
+
+function confirmEarlyExtract() {
+  if (!G.currentRaid) return;
+  const raid = G.currentRaid;
+  const carried = Object.keys(raid.carried).length;
+  const value = Object.entries(raid.carried).reduce((s,idq)=>s+(getItem(idq[0])?.val||0)*(idq[1]||0), 0);
+
+  let html = '<div id="extract-dialog-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:360px;text-align:center;">' +
+      '<h3>⚠️ 提前撤退</h3>' +
+      '<div style="font-size:13px;margin:12px 0;color:var(--text-dim)">' +
+        '你携带了 <b>'+carried+'</b> 件物品（价值 ¥'+fmtMoney(value)+'）<br><br>' +
+        '<span style="color:var(--red)">⚠ 提前撤退将失去所有携带物品！</span><br>' +
+        '装备不会丢失。<br><br>' +
+        '确定要撤退吗？</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button class="btn btn-danger btn-block" onclick="doEarlyExtract()">确认撤退</button>' +
+        '<button class="btn btn-secondary btn-block" onclick="document.getElementById(\'extract-dialog-overlay\').remove();">取消</button>' +
+      '</div>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function doEarlyExtract() {
+  var overlay = document.getElementById('extract-dialog-overlay');
+  if (overlay) overlay.remove();
+  var r = G.currentRaid;
+  if (!r) { extractRaid(true); return; }
+  r.carried = {};
+  r.currentEnemy = null;
+  // Clear all overlays, switch to main, then extract
+  document.querySelectorAll('.combat-overlay').forEach(function(o){o.remove();});
+  extractRaid(true);
+}
+
+function showMIADialog() {
+  if (!G.currentRaid) return;
+  const raid = G.currentRaid;
+  const carried = Object.keys(raid.carried).length;
+  const value = Object.entries(raid.carried).reduce(function(s,idq){return s+(getItem(idq[0])?.val||0)*(idq[1]||0);}, 0);
+
+  let html = '<div id="mia-dialog-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:360px;text-align:center;">' +
+      '<h3>⏰ 时间耗尽！</h3>' +
+      '<div style="font-size:13px;margin:12px 0;color:var(--text-dim)">' +
+        '回合数已用完，必须尽快找到撤离点！<br><br>' +
+        '你携带了 <b>'+carried+'</b> 件物品（价值 ¥'+fmtMoney(value)+'）<br><br>' +
+        '<span style="color:var(--red)">⚠ 下一回合若仍未到达撤离点，<br>将判定为行动失败（MIA），<br>丢失全部携带物品！</span></div>' +
+      '<button class="btn btn-danger btn-block btn-lg" onclick="document.getElementById(\'mia-dialog-overlay\').remove();raid().turnsLeft=1;renderAll();">继续搜索（最后1回合！）</button>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function raid() { return G.currentRaid; }
+
+// ─── DISCARD UI ───────────────────────────────────────────────
+
+function showDiscardUI() {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const carried = Object.entries(raid.carried);
+  if (carried.length === 0) { toast('背包里没有可丢弃的物品', 'info'); return; }
+
+  let html = '<div id="discard-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:380px;">' +
+      '<h3>🗑️ 丢弃物品</h3>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">点击物品丢弃（不可撤销）</div>' +
+      '<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">';
+
+  carried.forEach(([itemId, qty]) => {
+    const item = getItem(itemId);
+    if (!item) return;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border-left:3px solid '+rarityColor(item.rarity)+'">' +
+      '<span style="font-size:12px;">'+item.name+' x'+qty+'</span>' +
+      '<div style="display:flex;gap:4px;">' +
+        '<button class="btn btn-sm btn-danger" onclick="discardItem(\''+itemId+'\',1)">丢1</button>' +
+        (qty > 1 ? '<button class="btn btn-sm btn-warning" onclick="discardItem(\''+itemId+'\','+qty+')">全丢</button>' : '') +
+      '</div>' +
+      '</div>';
+  });
+
+  html += '</div>' +
+      '<button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="document.getElementById(\'discard-overlay\').remove();">关闭</button>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function discardItem(itemId, qty) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  if (!raid.carried[itemId]) return;
+  const actualDrop = Math.min(qty, raid.carried[itemId]);
+  raid.carried[itemId] -= actualDrop;
+  if (raid.carried[itemId] <= 0) delete raid.carried[itemId];
+  const item = getItem(itemId);
+  toast('🗑️ 丢弃了 '+ (item?.name||itemId) + ' x'+actualDrop, 'info');
+  const overlay = document.getElementById('discard-overlay');
+  if (overlay) overlay.remove();
+  showDiscardUI();
+  renderRaid();
+}
+
+function putInSecureContainer() {
+  const raid = G.currentRaid;
+  if (!raid) return;
+
+  const sCon = G.secureContainer;
+  const curUsed = Object.values(sCon.items).reduce((s,q)=>s+q, 0);
+  if (curUsed >= sCon.slots) { toast('🔒 保险箱已满！('+sCon.slots+'格)', 'error'); return; }
+
+  const carried = Object.entries(raid.carried);
+  if (carried.length === 0) { toast('背包里没有物品', 'info'); return; }
+
+  let html = '<div id="secure-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:380px;">' +
+      '<h3>🔒 存入保险箱 ('+curUsed+'/'+sCon.slots+')</h3>' +
+      '<div style="font-size:11px;color:var(--mint);margin-bottom:8px;">保险箱里的物品即使阵亡也不会丢失！</div>' +
+      '<div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">';
+
+  carried.forEach(([itemId, qty]) => {
+    const item = getItem(itemId);
+    if (!item) return;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border-left:3px solid '+rarityColor(item.rarity)+'">' +
+      '<span style="font-size:12px;">'+item.name+' x'+qty+' <span style="color:var(--gold);font-size:10px;">¥'+fmtMoney(item.val)+'</span></span>' +
+      '<button class="btn btn-sm btn-gold" onclick="moveToSecure(\''+itemId+'\',1)">存入1</button>' +
+      '</div>';
+  });
+
+  html += '</div>' +
+      '<button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="document.getElementById(\'secure-overlay\').remove();">关闭</button>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function moveToSecure(itemId, qty) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const sCon = G.secureContainer;
+  const curUsed = Object.values(sCon.items).reduce((s,q)=>s+q, 0);
+  if (curUsed >= sCon.slots) { toast('🔒 保险箱满了！', 'error'); return; }
+
+  if (!raid.carried[itemId] || raid.carried[itemId] <= 0) return;
+  const actual = Math.min(qty, raid.carried[itemId], sCon.slots - curUsed);
+  raid.carried[itemId] -= actual;
+  if (raid.carried[itemId] <= 0) delete raid.carried[itemId];
+
+  sCon.items[itemId] = (sCon.items[itemId] || 0) + actual;
+  raid.secureSlotsUsed = Object.values(sCon.items).reduce((s,q)=>s+q, 0);
+
+  const item = getItem(itemId);
+  toast('🔒 '+(item?.name||itemId)+' x'+actual+' 已存入保险箱', 'success');
+
+  const overlay = document.getElementById('secure-overlay');
+  if (overlay) overlay.remove();
+  renderRaid();
+}
+
+// ─── IN-RAID HEALING ──────────────────────────────────────────
+
+function showHealUI() {
+  const raid = G.currentRaid;
+  if (!raid) return;
+
+  // Find medical items and food in carried inventory
+  const medItems = [];
+  const foodItems = [];
+  for (const [itemId, qty] of Object.entries(raid.carried)) {
+    const item = getItem(itemId);
+    if (!item) continue;
+    if (item.type === 'medical') {
+      medItems.push({ id: itemId, item, qty });
+    } else if (item.type === 'food') {
+      foodItems.push({ id: itemId, item, qty });
+    }
+  }
+
+  if (medItems.length === 0 && foodItems.length === 0) {
+    toast('🎒 背包里没有医疗物品或食物！', 'error');
+    return;
+  }
+
+  let html = '<div id="heal-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:420px;">' +
+      '<h3>💊 使用物品</h3>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">当前体力: ⚡'+G.energy+' | 水分: 💧'+G.hydration+'</div>';
+
+  // Medical items section
+  if (medItems.length > 0) {
+    html += '<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">💊 医疗品（选择→点部位治疗）：</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    medItems.forEach(m => {
+      html += '<button class="btn btn-sm btn-success" onclick="selectHealItem(\''+m.id+'\')">' +
+        m.item.name + ' x'+m.qty + ' (+'+m.item.heal+'HP, '+m.item.uses+'次)' +
+        '</button>';
+    });
+    html += '</div></div>';
+  }
+
+  // Food items section
+  if (foodItems.length > 0) {
+    html += '<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">🍞 食物（点击直接食用）：</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    foodItems.forEach(f => {
+      const effDesc = [];
+      if (f.item.energy) effDesc.push('⚡+'+f.item.energy);
+      if (f.item.hyd) effDesc.push('💧+'+f.item.hyd);
+      html += '<button class="btn btn-sm btn-warning" onclick="eatFoodItem(\''+f.id+'\')">' +
+        f.item.name + ' x'+f.qty + ' ('+effDesc.join(' ')+')' +
+        '</button>';
+    });
+    html += '</div></div>';
+  }
+
+  // Step for medical: pick a medical item → target body part
+  html += '<div id="heal-target-area" style="margin-bottom:8px;">' +
+    '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">🎯 选择治疗部位（先选上方药品）：</div>' +
+    '<div id="heal-body-parts" style="display:flex;flex-wrap:wrap;gap:4px;">' +
+      '<span style="font-size:11px;color:var(--text-dim);">⬆️ 请先选择药品</span>' +
+    '</div></div>';
+
+  // Show current body HP
+  html += '<div style="margin-top:8px;">' +
+    '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">当前状态：</div>' +
+    BODY_PARTS.map(p => {
+      const pct = G.bodyHp[p] / G.bodyMaxHp[p] * 100;
+      const color = G.bodyHp[p] <= 0 ? 'var(--red)' : pct > 60 ? 'var(--mint)' : pct > 30 ? 'var(--orange)' : 'var(--red)';
+      return '<span style="font-size:10px;margin-right:4px;color:'+color+'">'+BODY_NAMES[p]+' '+G.bodyHp[p]+'/'+G.bodyMaxHp[p]+'</span>';
+    }).join(' | ') +
+    '</div>';
+
+  html += '<button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="document.getElementById(\'heal-overlay\').remove();">关闭</button>' +
+    '</div></div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+// Eat food item directly
+function eatFoodItem(itemId) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  if (!raid.carried[itemId] || raid.carried[itemId] <= 0) return;
+  const item = getItem(itemId);
+  if (!item || item.type !== 'food') return;
+
+  G.energy = Math.min(100, G.energy + (item.energy || 0));
+  G.hydration = Math.min(100, G.hydration + (item.hyd || 0));
+  raid.carried[itemId]--;
+  if (raid.carried[itemId] <= 0) delete raid.carried[itemId];
+
+  toast('🍞 吃了 ' + item.name + ' ⚡+'+(item.energy||0)+' 💧+'+(item.hyd||0), 'success');
+
+  const overlay = document.getElementById('heal-overlay');
+  if (overlay) overlay.remove();
+  showHealUI();
+  renderRaid();
+}
+
+// Track which medical item is selected for healing
+let _selectedHealItem = null;
+
+function selectHealItem(itemId) {
+  _selectedHealItem = itemId;
+  const item = getItem(itemId);
+  if (!item) return;
+
+  const partsArea = document.getElementById('heal-body-parts');
+  if (!partsArea) return;
+
+  partsArea.innerHTML = BODY_PARTS.map(p => {
+    const needHeal = G.bodyHp[p] < G.bodyMaxHp[p];
+    const blacked = G.bodyHp[p] <= 0;
+    // surgery can fix blacked limbs, regular meds cannot
+    const canHeal = blacked ? !!item.canFixBlacked : needHeal;
+    const label = blacked ? '🔧修复' : '💊治疗';
+    return '<button class="btn btn-sm '+(canHeal?'btn-primary':'btn-secondary')+'" ' +
+      'onclick="doHealBodyPart(\''+p+'\')" ' +
+      (!canHeal?'disabled title="该部位不需要治疗或需要手术包"':'') +
+      'style="font-size:10px;">' +
+      label + ' ' + BODY_NAMES[p] +
+      '</button>';
+  }).join('');
+}
+
+function doHealBodyPart(part) {
+  if (!_selectedHealItem) { toast('请先选择药品！', 'error'); return; }
+  const raid = G.currentRaid;
+  if (!raid) return;
+
+  const itemId = _selectedHealItem;
+  const item = getItem(itemId);
+  if (!item) return;
+
+  // Check if item is still in carried
+  if (!raid.carried[itemId] || raid.carried[itemId] <= 0) {
+    toast('药品已用完！', 'error');
+    _selectedHealItem = null;
+    const overlay = document.getElementById('heal-overlay');
+    if (overlay) overlay.remove();
+    return;
+  }
+
+  const healAmount = item.heal;
+  const needHeal = G.bodyMaxHp[part] - G.bodyHp[part];
+
+  if (needHeal <= 0 && G.bodyHp[part] > 0) {
+    toast(BODY_NAMES[part] + ' 不需要治疗', 'info');
+    return;
+  }
+
+  // Blacked limb requires surgery
+  if (G.bodyHp[part] <= 0 && !item.canFixBlacked) {
+    toast('⚠️ ' + BODY_NAMES[part] + ' 已断裂，需要手术包(🔧)修复！', 'error');
+    return;
+  }
+
+  const actualHeal = Math.min(healAmount, G.bodyMaxHp[part] - Math.max(0, G.bodyHp[part]));
+  G.bodyHp[part] = Math.min(G.bodyMaxHp[part], Math.max(0, G.bodyHp[part]) + healAmount);
+
+  toast('💊 ' + item.name + ' 治疗了 ' + BODY_NAMES[part] + ' (+'+actualHeal+'HP)', 'success');
+
+  // Consume one use
+  raid.carried[itemId]--;
+  if (raid.carried[itemId] <= 0) {
+    delete raid.carried[itemId];
+    _selectedHealItem = null;
+  }
+
+  // Refresh the UI
+  const overlay = document.getElementById('heal-overlay');
+  if (overlay) overlay.remove();
+  showHealUI();
+  renderRaid();
+}
+
+// ─── OUT-OF-RAID HEALING (局外治疗) ────────────────────────────
+
+function showOutOfRaidHeal(part) {
+  // Find medical items in stash
+  const medItems = [];
+  for (const [itemId, data] of Object.entries(G.stash)) {
+    const item = getItem(itemId);
+    if (item && item.type === 'medical') {
+      medItems.push({ id: itemId, item, qty: data.qty });
+    }
+  }
+
+  if (medItems.length === 0) {
+    toast('📦 仓库里没有医疗物品！去商人处购买或出击搜刮', 'error');
+    return;
+  }
+
+  const needHeal = G.bodyMaxHp[part] - G.bodyHp[part];
+  const blacked = G.bodyHp[part] <= 0;
+
+  let html = '<div id="heal-out-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:420px;">' +
+      '<h3>💊 治疗 ' + BODY_NAMES[part] + '</h3>' +
+      '<div style="font-size:12px;margin-bottom:4px;">当前: ' + G.bodyHp[part] + '/' + G.bodyMaxHp[part] + ' (需治疗: ' + Math.max(0, needHeal) + 'HP)</div>' +
+      (blacked ? '<div style="font-size:11px;color:var(--red);margin-bottom:6px;">⚠️ 该部位已断裂！需要手术包(🔧)修复</div>' : '') +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">选择仓库中的医疗物品：</div>' +
+      '<div style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">';
+
+  medItems.forEach(m => {
+    const canUse = blacked ? !!m.item.canFixBlacked : true;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;border-left:3px solid ' + rarityColor(m.item.rarity) + ';' + (!canUse ? 'opacity:0.4;' : '') + '">' +
+      '<div>' +
+        '<span style="font-size:13px;">' + m.item.name + '</span>' +
+        '<span style="font-size:10px;color:var(--text-dim);display:block;">+'+m.item.heal+'HP | 库存 x'+m.qty+'</span>' +
+      '</div>' +
+      '<button class="btn btn-sm btn-success" onclick="doOutOfRaidHeal(\''+part+'\',\''+m.id+'\')"' + (!canUse?'disabled':'') + '>' +
+        (blacked ? '🔧修复' : '💊使用') +
+      '</button>' +
+      '</div>';
+  });
+
+  html += '</div>' +
+      '<button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="document.getElementById(\'heal-out-overlay\').remove();">关闭</button>' +
+    '</div></div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function doOutOfRaidHeal(part, itemId) {
+  const item = getItem(itemId);
+  if (!item) return;
+
+  // Check stash
+  if (!G.stash[itemId] || G.stash[itemId].qty <= 0) {
+    toast('药品不足！', 'error');
+    return;
+  }
+
+  const blacked = G.bodyHp[part] <= 0;
+
+  // Blacked limb requires surgery
+  if (blacked && !item.canFixBlacked) {
+    toast('⚠️ ' + BODY_NAMES[part] + ' 已断裂，需要手术包(🔧)修复！', 'error');
+    return;
+  }
+
+  // No need to heal
+  if (G.bodyHp[part] >= G.bodyMaxHp[part]) {
+    toast(BODY_NAMES[part] + ' 已经满血', 'info');
+    return;
+  }
+
+  const actualHeal = Math.min(item.heal, G.bodyMaxHp[part] - Math.max(0, G.bodyHp[part]));
+  G.bodyHp[part] = Math.min(G.bodyMaxHp[part], Math.max(0, G.bodyHp[part]) + item.heal);
+
+  toast('💊 ' + item.name + ' 治疗了 ' + BODY_NAMES[part] + ' (+'+actualHeal+'HP)', 'success');
+
+  // Consume item from stash
+  G.stash[itemId].qty--;
+  if (G.stash[itemId].qty <= 0) delete G.stash[itemId];
+
+  // Close and refresh
+  const overlay = document.getElementById('heal-out-overlay');
+  if (overlay) overlay.remove();
+  showOutOfRaidHeal(part);
+  renderAll();
+  saveGame();
+}
+
+function healAllOutOfRaid() {
+  // Find all medical items in stash, sorted by heal amount (lowest first to use efficiently)
+  const medItems = [];
+  for (const [itemId, data] of Object.entries(G.stash)) {
+    const item = getItem(itemId);
+    if (item && item.type === 'medical' && !item.canFixBlacked) {
+      medItems.push({ id: itemId, item, qty: data.qty });
+    }
+  }
+
+  if (medItems.length === 0) {
+    toast('📦 仓库里没有医疗物品！', 'error');
+    return;
+  }
+
+  // Sort by heal amount ascending (use cheapest first)
+  medItems.sort((a, b) => a.item.heal - b.item.heal);
+
+  let totalHealed = 0;
+  let itemsUsed = 0;
+
+  for (const part of BODY_PARTS) {
+    if (G.bodyHp[part] <= 0) continue; // Skip blacked limbs (need surgery)
+    while (G.bodyHp[part] < G.bodyMaxHp[part]) {
+      // Find an available med
+      const med = medItems.find(m => m.qty > 0);
+      if (!med) break;
+
+      const healAmt = med.item.heal;
+      const actual = Math.min(healAmt, G.bodyMaxHp[part] - G.bodyHp[part]);
+      G.bodyHp[part] += actual;
+      totalHealed += actual;
+      med.qty--;
+      itemsUsed++;
+      // Update stash
+      if (G.stash[med.id]) {
+        G.stash[med.id].qty--;
+        if (G.stash[med.id].qty <= 0) delete G.stash[med.id];
+      }
+    }
+  }
+
+  if (totalHealed > 0) {
+    toast('💊 批量治疗完成！使用 ' + itemsUsed + ' 个药品，恢复 ' + totalHealed + 'HP', 'success');
+  } else {
+    toast('所有部位已满血，无需治疗', 'info');
+  }
+  renderAll();
+  saveGame();
+}
+
+// ─── OUT-OF-RAID FOOD ─────────────────────────────────────────
+
+function showOutOfRaidEat() {
+  // Find food items in stash
+  const foodItems = [];
+  for (const [itemId, data] of Object.entries(G.stash)) {
+    const item = getItem(itemId);
+    if (item && item.type === 'food') {
+      foodItems.push({ id: itemId, item, qty: data.qty });
+    }
+  }
+
+  if (foodItems.length === 0) {
+    toast('📦 仓库里没有食物！去商人处购买或出击搜刮', 'error');
+    return;
+  }
+
+  let html = '<div id="eat-out-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:420px;">' +
+      '<h3>🍞 吃食物</h3>' +
+      '<div style="font-size:12px;margin-bottom:8px;">当前: ⚡体力 ' + G.energy + '/100 | 💧水分 ' + G.hydration + '/100</div>' +
+      '<div style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">';
+
+  foodItems.forEach(f => {
+    const effDesc = [];
+    if (f.item.energy) effDesc.push('⚡+'+f.item.energy);
+    if (f.item.hyd) effDesc.push('💧+'+f.item.hyd);
+    const canUse = G.energy < 100 || G.hydration < 100;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;border-left:3px solid ' + rarityColor(f.item.rarity) + ';' + (!canUse ? 'opacity:0.5;' : '') + '">' +
+      '<div>' +
+        '<span style="font-size:13px;">' + f.item.name + '</span>' +
+        '<span style="font-size:10px;color:var(--text-dim);display:block;">' + effDesc.join(' ') + ' | 库存 x' + f.qty + '</span>' +
+      '</div>' +
+      '<button class="btn btn-sm btn-warning" onclick="eatFoodOutOfRaid(\'' + f.id + '\')"' + (!canUse ? 'disabled' : '') + '>' +
+        (canUse ? '食用' : '已满') +
+      '</button>' +
+      '</div>';
+  });
+
+  html += '</div>' +
+      '<button class="btn btn-secondary btn-block" style="margin-top:10px;" onclick="document.getElementById(\'eat-out-overlay\').remove();">关闭</button>' +
+    '</div></div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+function eatFoodOutOfRaid(itemId) {
+  if (!G.stash[itemId] || G.stash[itemId].qty <= 0) {
+    toast('食物不足！', 'error');
+    return;
+  }
+  const item = getItem(itemId);
+  if (!item || item.type !== 'food') return;
+
+  if (G.energy >= 100 && G.hydration >= 100) {
+    toast('体力和水分已满！', 'info');
+    return;
+  }
+
+  const oldE = G.energy, oldH = G.hydration;
+  G.energy = Math.min(100, G.energy + (item.energy || 0));
+  G.hydration = Math.min(100, G.hydration + (item.hyd || 0));
+
+  G.stash[itemId].qty--;
+  if (G.stash[itemId].qty <= 0) delete G.stash[itemId];
+
+  toast('🍞 吃了 ' + item.name + ' ⚡+' + (G.energy - oldE) + ' 💧+' + (G.hydration - oldH), 'success');
+
+  const overlay = document.getElementById('eat-out-overlay');
+  if (overlay) overlay.remove();
+  showOutOfRaidEat();
+  renderAll();
+  saveGame();
+}
+
+function renderSecureInfo() {
+  let el = $('#screen-secure');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'screen-secure';
+    el.className = 'screen';
+    $('#app').appendChild(el);
+  }
+
+  const sCon = G.secureContainer;
+  let html = '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-bottom:10px;">← 返回</button>' +
+    '<div class="card">' +
+      '<div class="card-header"><span class="icon">🔒</span><h3>保险箱 Lv.'+sCon.level+' ('+sCon.slots+'格)</h3></div>' +
+      '<div style="font-size:11px;color:var(--mint);margin-bottom:8px;">保险箱里的物品即使阵亡也不会丢失。通过任务升级可增加格数。</div>';
+
+  const items = Object.entries(sCon.items);
+  if (items.length === 0) {
+    html += '<div style="color:var(--text-dim);text-align:center;padding:12px;">保险箱是空的。在突袭中把贵重物品存入保险箱吧！</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:4px;">';
+    for (const [itemId, qty] of items) {
+      const item = getItem(itemId);
+      if (!item) continue;
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.06);border-radius:6px;border-left:3px solid '+rarityColor(item.rarity)+'">' +
+        '<span style="font-size:12px;">'+item.name+' x'+qty+'</span>' +
+        '<span style="color:var(--gold);font-size:10px;">¥'+fmtMoney(item.val)+'</span>' +
+        '</div>';
+    }
+    html += '</div>';
+  }
+
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+// ─── LOOT PICKUP UI (restored) ────────────────────────────────
+
+function showLootPickupUI(r, c) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const cell = raid.cells[r][c];
+  if (!cell.loot || cell.loot.length === 0) return;
+
+  const curCarry = Object.values(raid.carried).reduce((s,q)=>s+q, 0);
+  const capacity = totalCarrySlots();
+  const isFull = curCarry >= capacity;
+  const items = [...cell.loot];
+
+  let html = '<div id="loot-pickup-overlay" class="combat-overlay">' +
+    '<div class="combat-panel" style="max-width:420px;">' +
+      '<div style="text-align:center;margin-bottom:12px;">' +
+        '<h3>📦 发现物资 (' + items.length + '件)</h3>' +
+        '<div style="font-size:11px;color:' + (isFull ? 'var(--red)' : 'var(--mint)') + '">' +
+          '🎒 背包 ' + curCarry + '/' + capacity + ' ' + (isFull ? '⚠️已满！丢弃物品腾出空间' : '') +
+        '</div>' +
+      '</div>';
+
+  // === SECTION 1: Items on the ground ===
+  html += '<div style="font-size:12px;font-weight:600;margin-bottom:4px;color:var(--gold);">📦 脚下物资：</div>' +
+    '<div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+
+  items.forEach(function(item, idx) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:6px;border-left:3px solid ' + rarityColor(item.rarity) + '">' +
+      '<div>' +
+        '<span style="color:' + rarityColor(item.rarity) + ';font-size:10px">[' + rarityName(item.rarity) + ']</span> ' +
+        '<span style="font-size:12px;">' + item.name + '</span>' +
+        '<span style="font-size:9px;color:var(--gold);display:block;">¥' + fmtMoney(item.val) + '</span>' +
+      '</div>' +
+      '<button class="btn btn-sm btn-primary" onclick="pickupLootItem(' + r + ',' + c + ',' + idx + ')" ' + (isFull ? 'disabled' : '') + '>' +
+        (isFull ? '包满' : '捡起') +
+      '</button>' +
+      '</div>';
+  });
+
+  html += '</div>';
+
+  // === SECTION 2: If bag is full, show carried items to discard ===
+  if (isFull) {
+    html += '<div style="font-size:12px;font-weight:600;margin-bottom:4px;color:var(--orange);">🎒 已携带（点击丢弃腾空间）：</div>' +
+      '<div style="max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+
+    var carried = Object.entries(raid.carried);
+    if (carried.length === 0) {
+      html += '<span style="font-size:11px;color:var(--text-dim);">空空如也</span>';
+    } else {
+      carried.forEach(function(e) {
+        var itemId = e[0], qty = e[1];
+        var carriedItem = getItem(itemId);
+        if (!carriedItem) return;
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;">' +
+          '<span style="font-size:11px;">' + carriedItem.name + ' <span style="font-size:9px;color:var(--text-dim);">x' + qty + '</span></span>' +
+          '<div style="display:flex;gap:3px;">' +
+            '<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:10px;" onclick="discardFromLootUI(\'' + itemId + '\',1)">丢1</button>' +
+            (qty > 1 ? '<button class="btn btn-sm btn-warning" style="padding:2px 8px;font-size:10px;" onclick="discardFromLootUI(\'' + itemId + '\',' + qty + ')">全丢</button>' : '') +
+          '</div>' +
+          '</div>';
+      });
+    }
+    html += '</div>';
+  }
+
+  html +=
+      '<div style="display:flex;gap:6px;margin-top:8px;">' +
+        '<button class="btn btn-lg btn-gold btn-block" onclick="pickupLootItem(' + r + ',' + c + ',-1)">🎒 全部捡起</button>' +
+        '<button class="btn btn-secondary" onclick="closeLootUI()">离开</button>' +
+      '</div>' +
+      '<div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;">💡 关闭后可随时点击脚下格子或"搜索脚下"按钮重新搜索</div>' +
+    '</div>' +
+    '</div>';
+
+  $('#app').insertAdjacentHTML('beforeend', html);
+}
+
+// Discard item directly from loot UI — refreshes the loot panel
+function discardFromLootUI(itemId, qty) {
+  var raid = G.currentRaid;
+  if (!raid) return;
+  if (!raid.carried[itemId]) return;
+  var actual = Math.min(qty, raid.carried[itemId]);
+  raid.carried[itemId] -= actual;
+  if (raid.carried[itemId] <= 0) delete raid.carried[itemId];
+  var item = getItem(itemId);
+  toast('🗑️ 丢弃了 ' + (item ? item.name : itemId) + ' x' + actual, 'info');
+  // Refresh the loot UI while keeping it open
+  var overlay = document.getElementById('loot-pickup-overlay');
+  if (overlay) overlay.remove();
+  showLootPickupUI(G.currentRaid.playerR, G.currentRaid.playerC);
+}
+
+function closeLootUI() {
+  var overlay = document.getElementById('loot-pickup-overlay');
+  if (overlay) overlay.remove();
+  renderRaid();
+}
+
+function pickupLootItem(r, c, idx) {
+  const raid = G.currentRaid;
+  if (!raid) return;
+  const cell = raid.cells[r][c];
+  if (!cell.loot || cell.loot.length === 0) return;
+
+  const curCarry = Object.values(raid.carried).reduce((s,q)=>s+q, 0);
+  const capacity = totalCarrySlots();
+
+  if (curCarry >= capacity) {
+    toast('🎒 背包满了！按「🗑️丢弃物品」腾出空间', 'error');
+    return;
+  }
+
+  if (idx === -1) {
+    let picked = 0;
+    while (cell.loot.length > 0) {
+      const carry = Object.values(raid.carried).reduce((s,q)=>s+q, 0);
+      if (carry >= capacity) break;
+      const item = cell.loot[0];
+      raid.carried[item.id] = (raid.carried[item.id] || 0) + 1;
+      cell.loot.splice(0, 1);
+      picked++;
+    }
+    toast('📦 捡起了 '+picked+' 件物品', 'success');
+  } else if (idx < cell.loot.length) {
+    const item = cell.loot[idx];
+    raid.carried[item.id] = (raid.carried[item.id] || 0) + 1;
+    cell.loot.splice(idx, 1);
+    toast('📦 捡到 '+item.name, 'info');
+  }
+
+  const overlay = document.getElementById('loot-pickup-overlay');
+  if (overlay) overlay.remove();
+
+  if (cell.loot.length === 0) {
+    cell.type = 'empty';
+  }
+
+  closeLootUI();
+  renderRaid();
+}
+
+init();
+
+// ─── TASKS ────────────────────────────────────────────────────
+
+const TASKS = [
+  { id:'first_raid', name:'初次出击', desc:'完成首次成功撤离', requirement:{type:'survived',count:1}, reward_gold:3000, reward_desc:'¥3,000', levelReq:1 },
+  { id:'kill_5', name:'清道夫', desc:'累计击杀5个敌人', requirement:{type:'killed',count:5}, reward_gold:5000, reward_desc:'¥5,000', levelReq:1 },
+  { id:'loot_10k', name:'发财了', desc:'单局搜刮价值超过¥10,000', requirement:{type:'loot_single',count:10000}, reward_gold:8000, reward_desc:'¥8,000', levelReq:3 },
+  { id:'secure_upgrade_1', name:'🔒保险箱升级I', desc:'完成3次成功撤离', requirement:{type:'survived',count:3}, reward_secure:{level:2,slots:3}, reward_desc:'保险箱升2级(3格)', levelReq:5 },
+  { id:'kill_20', name:'战争机器', desc:'累计击杀20个敌人', requirement:{type:'killed',count:20}, reward_gold:20000, reward_desc:'¥20,000', levelReq:7 },
+  { id:'secure_upgrade_2', name:'🔒保险箱升级II', desc:'在实验室成功撤离1次', requirement:{type:'map_extract',map:'lab',count:1}, reward_secure:{level:3,slots:4}, reward_desc:'保险箱升3级(4格)', levelReq:10 },
+  { id:'boss_hunter', name:'屠龙者', desc:'击杀1个Boss', requirement:{type:'boss_kills',count:1}, reward_secure:{level:4,slots:6}, reward_desc:'保险箱升4级(6格)', levelReq:12 },
+  { id:'rich', name:'亿万富翁', desc:'累计搜刮¥500,000', requirement:{type:'total_loot',count:500000}, reward_gold:100000, reward_desc:'¥100,000', levelReq:15 },
+];
+
+function checkTaskProgress() {
+  for (const task of TASKS) {
+    if (task.levelReq > G.level) continue;
+    if (G.tasks.completed.includes(task.id)) continue;
+    let active = G.tasks.active.find(t => t.id === task.id);
+    if (!active) { active = { id:task.id, progress:0, completed:false }; G.tasks.active.push(active); }
+    if (active.completed) continue;
+    switch (task.requirement.type) {
+      case 'survived': active.progress=G.stats.survived; break;
+      case 'killed': active.progress=G.stats.killed; break;
+      case 'total_loot': active.progress=G.stats.totalLoot; break;
+      case 'boss_kills': active.progress=G.stats.bossKills||0; break;
+      case 'loot_single': if(!G._lastRaidLootValue)G._lastRaidLootValue=0; active.progress=Math.max(active.progress,G._lastRaidLootValue); break;
+      case 'map_extract':
+	        if(!G._mapExtracts)G._mapExtracts={};
+	        if (task.requirement.map) { active.progress = G._mapExtracts[task.requirement.map] || 0; }
+	        else { active.progress = Object.values(G._mapExtracts).reduce((s,c)=>s+c, 0); }
+	        break;
+    }
+    if (active.progress >= task.requirement.count) {
+      active.completed=true; G.tasks.completed.push(task.id);
+      if (task.reward_gold) { G.money+=task.reward_gold; toast('✅任务完成：「'+task.name+'」获得¥'+fmtMoney(task.reward_gold)+'！','success'); }
+      if (task.reward_secure) { G.secureContainer.level=task.reward_secure.level; G.secureContainer.slots=task.reward_secure.slots; toast('🔒保险箱升级到Lv.'+task.reward_secure.level+'（'+task.reward_secure.slots+'格）！','success'); }
+    }
+  }
+}
+
+function renderTasks() {
+  let el = $('#screen-tasks');
+  if (!el) { el = document.createElement('div'); el.id='screen-tasks'; el.className='screen'; $('#app').appendChild(el); }
+  let html = '<button class="btn btn-sm btn-secondary" onclick="renderMain();setScreen(\'main\')" style="margin-bottom:10px;">← 返回</button>';
+  for (const task of TASKS) {
+    const active = G.tasks.active.find(t=>t.id===task.id);
+    const isDone = G.tasks.completed.includes(task.id);
+    const progress = active?active.progress:0;
+    const target = task.requirement.count;
+    const pct = Math.min(100,Math.floor(progress/target*100));
+    const locked = G.level<task.levelReq;
+    html += '<div class="card" style="'+(isDone?'opacity:0.6;':'')+(locked?'opacity:0.35;':'')+'">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;">'+
+        '<div><b>'+task.name+'</b>'+(isDone?'✅':locked?'🔒Lv.'+task.levelReq:'')+
+        '<div style="font-size:11px;color:var(--text-dim)">'+task.desc+'</div></div>'+
+        '<div style="text-align:right;font-size:11px;min-width:110px;"><span style="color:var(--gold)">🎁'+task.reward_desc+'</span><br>'+
+        (!isDone&&!locked?'<span style="color:var(--mint)">'+fmtMoney(progress)+'/'+fmtMoney(target)+' ('+pct+'%)</span>':'')+'</div>'+
+      '</div>'+
+      (pct>0&&!isDone?'<div class="hp-bar-outer" style="margin-top:6px;"><div class="hp-bar-inner hp-healthy" style="width:'+pct+'%"></div></div>':'')+
+    '</div>';
+  }
+  el.innerHTML = html;
+}
+</script>
+</body>
+</html>
+
